@@ -1,24 +1,36 @@
 plugins {
+    id 'java'
     id 'java-library'
-    id 'maven-publish'      // 배포를 위해 필수
     id 'java-gradle-plugin'
+    id 'maven-publish'
 }
 
-// 🔥 중요: group은 반드시 'com.github.본인아이디' 형식을 추천합니다.
 group = 'com.github.dev_sj'
 version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
 
 gradlePlugin {
     plugins {
         jpmPlugin {
-            // 사용자가 plugins { id '...' } 에 적을 값
+            // plugins { id "com.github.dev_sj.jpm" }
             id = 'com.github.dev_sj.jpm'
             implementationClass = 'config.plugin.JpmPlugin'
         }
     }
 }
 
-// JitPack이 빌드할 때 필요한 배포 설정
+
+dependencies {
+    // 🔹 MyBatis Core (Mapper 생성용)
+    implementation 'org.mybatis:mybatis:3.5.16'
+
+    // 🔹 (선택) MyBatis-Spring — 필요 없으면 빼도 됨
+    // implementation 'org.mybatis.spring:mybatis-spring:3.0.3'
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
