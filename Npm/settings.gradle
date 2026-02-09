@@ -1,0 +1,23 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        maven { url 'https://jitpack.io' } // 🔥 깃허브 플러그인 창고
+    }
+
+    resolutionStrategy {
+        eachPlugin {
+            // 1. 사용자가 요청한 ID가 님의 플러그인 ID라면
+            if (requested.id.id == 'com.github.jpm') {
+                // 2. 실제 GitHub 저장소 좌표로 연결해라!
+                // 형식: useModule("com.github.유저명:레포이름:버전")
+                useModule("com.github.dev_sj:jpm:1.0.0")
+            }
+        }
+    }
+}
+
+rootProject.name = 'Npm'
+
+
+
