@@ -21,7 +21,7 @@ gradlePlugin {
 dependencies {
 
     implementation 'org.mybatis:mybatis:3.5.16'
-    implementation 'com.github.dev-sj00:JPM:v1.0.1'
+    implementation 'com.github.dev-sj00:JPM:v1.0.3'
 
 
 }

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.github.dev_sj'
-version = '1.0.0'
+version = '1.0.4'
 
 repositories {
     mavenCentral()
@@ -15,11 +15,19 @@ repositories {
 gradlePlugin {
     plugins {
         jpmPlugin {
-            // plugins { id "com.github.dev_sj.jpm" }
             id = 'com.github.dev_sj.jpm'
-            implementationClass = 'config.plugin.JpmPlugin'
+            // ⚠️ 여기가 핵심입니다!
+            // 실제 패키지 명을 포함한 전체 경로여야 합니다.
+            // 만약 config 패키지 안의 AppConfig라면 아래와 같이 수정:
+            implementationClass = 'config.AppConfig'
         }
     }
+}
+
+// JAR 파일에 컴파일된 모든 클래스를 강제로 때려 넣는 설정 추가
+jar {
+    from sourceSets.main.output
+    include "**/*.class"
 }
 
 
