@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.dev_sj.jpm'
-version = '1.0.0' // 필요시 버전 업 (예: 1.0.7)
+version = '0.1.0-SNAPSHOT'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
