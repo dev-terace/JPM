@@ -3,11 +3,73 @@ package mq_repository.domain;
 import dsl_variable.v2.MField;
 import mq_mapper.domain.vo.DslStatement;
 
-public abstract class JpmAbstractQuerySegment<ReturnType> {
+public abstract class JpmAbstractQuerySegment<T> {
 
     /**
      * 사용자가 target.id 처럼 필드에 접근할 수 있게 해주는 더미 객체입니다.
      */
+    public T segment;
+
+
+
+
+    public static Sql.Raw raw(Object obj) { return new Sql.Raw(obj); }
+
+
+
+
+
+    public static Sql.Quoted quoted(String val) { return new Sql.Quoted(val); }
+
+
+    public static  Sql.Bind bind(String val) { return new Sql.Bind(val); }
+    public static <E, R> Sql.Bind bind(MFieldRef<E, R> fieldRef) { return new Sql.Bind(fieldRef); }
+
+
+    public static class Sql {
+        // 1. Raw: 무엇이든 허용 (col, as, String, MethodRef 등)
+        public static Raw raw(Object val) { return new Raw(val); }
+
+        // 2. Quoted: 값(Literal)에 따옴표를 붙이는 용도 (String 또는 MethodRef)
+        public static Quoted quoted(String val) { return new Quoted(val); }
+
+        // 3. Bind: 마이바티스 파라미터 바인딩용 (String 또는 MethodRef)
+        public static Bind bind(String val) { return new Bind(val); }
+        public static <E, R> Bind bind(MFieldRef<E, R> fieldRef) { return new Bind(fieldRef); }
+
+        // --- 내부 클래스 정의 ---
+
+        public static class Raw {
+            public String val;
+            public Object origin;
+            public Raw(Object v) {
+                this.origin = v;
+                this.val = (v instanceof String) ? (String) v : "___RAW_REF___";
+            }
+            @Override public String toString() { return val; }
+        }
+
+
+        public static class Quoted {
+            public String val;
+            public Object origin;
+            public Quoted(Object v) {
+                this.origin = v;
+                this.val = (v instanceof String) ? (String) v : "___QUOTED_REF___";
+            }
+            @Override public String toString() { return "'" + val + "'"; }
+        }
+
+        public static class Bind {
+            public String val;
+            public Object origin;
+            public Bind(Object v) {
+                this.origin = v;
+                this.val = (v instanceof String) ? (String) v : "___BIND_REF___";
+            }
+            @Override public String toString() { return "#{" + val + "}"; }
+        }
+    }
 
 
     public static class AliasedField<E, R> {
@@ -47,7 +109,7 @@ public abstract class JpmAbstractQuerySegment<ReturnType> {
     // --- Selectable 구현 ---
     // =======================================================
     public void select(String... cols) {}
-
+    public void select(Object... cols) {}
     // [수정] 조인된 다른 엔티티의 컬럼도 select 할 수 있도록 <?> 로 변경
 
     @SafeVarargs
@@ -63,6 +125,10 @@ public abstract class JpmAbstractQuerySegment<ReturnType> {
     public void from(String table) {}
     public void from(Class<?> entityClass, String alias) {}
 
+    public void from(Object table) {
+
+    }
+
     // =======================================================
     // --- Conditional 구현 ---
     // =======================================================
@@ -75,9 +141,7 @@ public abstract class JpmAbstractQuerySegment<ReturnType> {
 
 
 
-    public <E1, R1, E2, R2> void where(MFieldRef<E1, R1> leftField, String op, MFieldRef<E2, R2> rightField) {}
-    public <E1, R1, E2, R2> void and(MFieldRef<E1, R1> leftField, String op, MFieldRef<E2, R2> rightField) {}
-    public <E1, R1, E2, R2> void or(MFieldRef<E1, R1> leftField, String op, MFieldRef<E2, R2> rightField) {}
+
 
 
     // [수정] 모든 엔티티에 대해 조건절을 걸 수 있도록 제네릭 <E> 사용
@@ -85,6 +149,14 @@ public abstract class JpmAbstractQuerySegment<ReturnType> {
     public <E, R> void and(MFieldRef<E, R> fieldRef, String op, Object value) {}
     public <E, R> void or(MFieldRef<E, R> fieldRef, String op, Object value) {}
 
+    public <E, R> void where(MFieldRef<E, R> fieldRef, String op, String value) {}
+    public <E, R> void and(MFieldRef<E, R> fieldRef, String op, String value) {}
+    public <E, R> void or(MFieldRef<E, R> fieldRef, String op, String value) {}
+
+
+    public void where(Object left, String op, Object right) {}
+    public void and(Object left, String op, Object right) {}
+    public void or(Object left, String op, Object right) {}
 
 
     public void where(AliasedField<?, ?> col, String op, Object value) {}
@@ -122,6 +194,12 @@ public abstract class JpmAbstractQuerySegment<ReturnType> {
 
 
 
+    public void innerJoin(Object targetTable, Object left, Object right) {}
+    public void leftJoin(Object targetTable, Object left, Object right) {}
+
+    public void innerJoinGroup(Object targetTable, Object left, Object right) {}
+    public void leftJoinGroup(Object targetTable, Object left, Object right) {}
+
 
 
 
@@ -136,9 +214,17 @@ public abstract class JpmAbstractQuerySegment<ReturnType> {
 
     // [수정] UPDATE, INSERT는 대상 테이블(T)에 종속적이지만 확장성을 고려해 <E>로 엽니다.
     public <E, R> void value(MFieldRef<E, R> fieldRef, Object value) {}
+    public <E, R> void value(MFieldRef<E, R> fieldRef, String value) {}
+
+
     public <E, R> void set(MFieldRef<E, R> fieldRef, Object value) {}
 
     public void set(AliasedField<?, ?> col, Object value) {}
+
+
+    public <E, R> void set(MFieldRef<E, R> fieldRef, String value) {}
+
+    public void set(AliasedField<?, ?> col, String value) {}
 
     public <E, R> void setRaw(MFieldRef<E, R> fieldRef, String rawSql) {}
 

@@ -4,7 +4,7 @@ import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
 
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 
 import java.util.List;
 

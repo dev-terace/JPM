@@ -1,6 +1,8 @@
 package mq_mapper.infra;
 
+import mq_mapper.domain.vo.EntityMeta;
 import mq_mapper.domain.vo.MethodMeta;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,8 @@ public class MybatisXmlGenerator {
      * "MEntity3::getId" -> "id"
      * "MEntity3::getDescription" -> "description" 으로 변환
      */
+
+
     private String toPropertyName(String rawArg) {
         if (rawArg == null || rawArg.trim().isEmpty()) return rawArg;
 
@@ -64,7 +68,7 @@ public class MybatisXmlGenerator {
             String propertyName = toPropertyName(rawArg);
 
             // 1. EntityMetaRegistry에서 컬럼명을 가져옴
-            utils.EntityMeta targetMeta = EntityMetaRegistry.getEntityMeta(className);
+            EntityMeta targetMeta = EntityMetaRegistry.getEntityMeta(className);
             if (targetMeta != null) {
                 String dbCol = targetMeta.getColumn(propertyName);
 

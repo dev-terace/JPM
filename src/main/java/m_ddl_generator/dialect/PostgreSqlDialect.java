@@ -19,7 +19,7 @@ public class PostgreSqlDialect implements SqlDialect {
         } else if (fieldType.equals(MFieldType.JSON)) {
             return "JSONB";
         }
-        LogPrinter.error(fieldType.toString(), "", "FieldTypeError MysqlDialect class", null);
+
         return null;
     }
 
@@ -84,8 +84,18 @@ public class PostgreSqlDialect implements SqlDialect {
     public List<String> createAlterTableSql(TableMetadata table, ColumnMetadata col, HashMap<String, List<String>> parentFieldTypes) {
         List<String> sql = new ArrayList<>();
         if (col.isForeignKey()) {
+
+
+            String parentFieldType = parentFieldTypes.get(col.getFkTargetTable())
+                    .stream()
+                    .filter(type -> type != null && !type.isEmpty()
+                    ).findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("[PostgreSQLDialect] Index Parent Field Type is NULL"));
+
+
+
             // 세미콜론 제거
-            sql.add(String.format("ALTER TABLE %s ADD COLUMN %s BIGINT", table.getTableName(), col.getName()));
+            sql.add(String.format("ALTER TABLE %s ADD COLUMN %s %s", table.getTableName(), col.getName(), parentFieldType));
 
             String constraintName = "fk_" + table.getTableName() + "_" + col.getName();
             sql.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) ON DELETE %s",

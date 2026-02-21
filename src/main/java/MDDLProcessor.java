@@ -1,6 +1,7 @@
 
 
 import auto_ddl.AutoDDLPolicy;
+import com.github.javaparser.utils.Log;
 import com.google.auto.service.AutoService;
 import config.AppConfig;
 import m_ddl_generator.dialect.MySqlDialect;
@@ -44,7 +45,6 @@ public class MDDLProcessor extends AbstractProcessor {
             // 1. Gradle이 주입한 옵션 가져오기 (파일 읽기 X, 오직 주입된 값만 신뢰)
             Map<String, String> options = processingEnv.getOptions();
 
-
             LogPrinter.init(processingEnv); //콘솔 찍기용
 
             // 2. Policy 파싱 (대소문자 무시 처리)
@@ -59,12 +59,14 @@ public class MDDLProcessor extends AbstractProcessor {
                         "⚠️ [JPM] 알 수 없는 auto 모드입니다 ('" + autoStr + "'). DISABLED로 설정합니다.");
             }
 
+
             // 3. DISABLED 상태면 즉시 종료 (로그만 남김)
             if (policy == AutoDDLPolicy.DISABLED) {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
                         "💤 [JPM] DDL Generator is DISABLED. (Skipping execution)");
                 return true;
             }
+
 
             // 4. 실행 정보 로그 출력
             String dbType = options.getOrDefault("dbType", "MYSQL").toUpperCase();

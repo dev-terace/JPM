@@ -5,10 +5,10 @@ import mq_repository.domain.SqlNode;
 
 
 
-import mq_mapper.infra.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 import mq_mapper.infra.SqlMapperBinder;
 
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 
 
 
@@ -26,19 +26,8 @@ public class ConditionNode implements SqlNode {
     }
 
     public String toSql(SqlMapperBinder.BuildContext ctx) {
-        String resolvedColumn = resolveColumn(this.column, ctx);
-
-        // 🚀 value가 컬럼 참조("Entity::getField" 형태)면 컬럼명으로 변환
-        String formattedValue;
-        String valueStr = this.value.toString();
-        if (valueStr.contains("::")) {
-            formattedValue = resolveColumn(
-                    resolveArgToColumn(valueStr, ctx), ctx
-            );
-        } else {
-            formattedValue = formatValue(this.value, this.column, ctx);
-        }
-
+        String resolvedColumn = resolveSelectColumn(this.column, ctx);
+        String formattedValue = formatValue(this.value);
         return resolvedColumn + " " + this.operator + " " + formattedValue;
     }
 
@@ -56,72 +45,40 @@ public class ConditionNode implements SqlNode {
     // 내부 헬퍼 메서드 (JoinNode의 로직과 유사)
     // -------------------------------------------------------------------------
 
-    private String resolveColumn(String colStr, SqlMapperBinder.BuildContext ctx) {
-        String targetCol = colStr;
+    private String resolveSelectColumn(String colStr, SqlMapperBinder.BuildContext ctx) {
+        // OrderItemEntity::getProductName 형태 처리
 
-        // 1. 접두어가 없고(BareName) 테이블 접두어가 필요한 경우 자동 추가
-        if (!targetCol.contains(".") && ctx.requiresPrefix) {
-            targetCol = ctx.tablePrefix + "." + targetCol;
-        }
+            return ColumnResolver.resolve(colStr, ctx);
 
-        // 2. "별칭.필드명" 형태인 경우 실제 DB 컬럼명으로 치환
-        if (targetCol.contains(".")) {
-            String[] parts = targetCol.split("\\.");
-            String alias = parts[0];
-            String fieldName = parts[1];
-
-            String tableName = ctx.tableAliases.get(alias);
-            if (tableName != null) {
-                EntityMeta meta = EntityMetaRegistry.getEntityMeta(tableName);
-                if (meta != null) {
-                    String dbCol = meta.getColumn(fieldName);
-                    if (dbCol != null) return alias + "." + dbCol;
-                }
-            }
-        }
-        return targetCol;
     }
 
-    private String formatValue(Object val, String column, SqlMapperBinder.BuildContext ctx) {
+    private String convertGetterToField(String methodName) {
+        if (methodName.startsWith("get") && methodName.length() > 3)
+            return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+        if (methodName.startsWith("is") && methodName.length() > 2)
+            return Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
+        return methodName;
+    }
+
+    private String formatValue(Object val) {
         if (val == null) return "NULL";
 
-        // 1. 이미 따옴표가 붙어있거나 바인딩 변수(?)인 경우 그대로 반환 (이중 방지)
         String s = val.toString();
+
+        // 이미 처리된 케이스
         if (s.startsWith("'") && s.endsWith("'")) return s;
         if (s.equals("?")) return s;
+        if (s.contains("#{")) return s;
 
-
-
-        if ( s.contains("#{") ) {
-            return s;
-        }
-
-        // 2. 컬럼의 실제 타입 정보(MFieldType) 확인
-        String fieldType = getFieldType(column, ctx);
-
-        // 🚀 [해결 포인트 1] BOOLEAN 타입이면 대문자로 변환하고 따옴표 없이 반환
-        if ("BOOLEAN".equalsIgnoreCase(fieldType) ||
-                "true".equalsIgnoreCase(s) || "false".equalsIgnoreCase(s)) {
-            return s.toUpperCase();
-        }
-
-        // 🚀 [해결 포인트 2] 숫자 타입(LONG, INTEGER 등) 처리
-        if (fieldType != null) {
-            switch (fieldType.toUpperCase()) {
-                case "LONG": case "INTEGER": case "FLOAT": case "DOUBLE": case "FK":
-                    return s.replace("L", "").replace("l", "");
-            }
-        }
-
-        // 3. 타입 정보가 없더라도 순수 숫자인 경우 따옴표 생략
+        // 숫자면 따옴표 없이
         if (s.matches("-?\\d+(\\.\\d+)?")) return s;
         if (s.matches("-?\\d+[Ll]")) return s.replaceAll("(?i)L", "");
 
-        // 4. 그 외 나머지만 따옴표를 붙임
-        return "'" + s + "'";
+        // 나머지(String 포함) 무조건 따옴표
+        return s.replace("'", "''");
     }
 
-    private String getFieldType(String column, SqlMapperBinder.BuildContext ctx) {
+/*    private String getFieldType(String column, SqlMapperBinder.BuildContext ctx) {
         // "users_info.id" → "id" 추출
         String fieldName = column.contains(".") ? column.split("\\.")[1] : column;
         String tableName = column.contains(".")
@@ -148,12 +105,12 @@ public class ConditionNode implements SqlNode {
             return alias + "." + (dbCol != null ? dbCol : fieldName);
         }
         return fieldName;
-    }
+    }*/
 
-    private String extractFieldName(String methodName) {
+/*    private String extractFieldName(String methodName) {
         if (methodName.startsWith("get") && methodName.length() > 3) {
             return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
         }
         return methodName;
-    }
+    }*/
 }

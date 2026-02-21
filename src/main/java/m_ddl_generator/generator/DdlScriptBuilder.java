@@ -1,6 +1,7 @@
 package m_ddl_generator.generator;
 
 import auto_ddl.AutoDDLPolicy;
+import com.github.javaparser.utils.Log;
 import config.AppConfig;
 import m_ddl_generator.dialect.SqlDialect;
 
@@ -32,29 +33,17 @@ public class DdlScriptBuilder {
      * [Public] 전체 DDL 스크립트 생성 (Main Method)
      */
     public String build(List<TableMetadata> tables) {
-
         StringBuilder sb = new StringBuilder();
-
         sb.append("<![CDATA[\n");
-
         // 1. 테이블 삭제 및 생성 (DROP & CREATE)
         buildDropAndCreate(sb, tables);
-
-
-
         // 2. 컬럼 추가 (ALTER - UPDATE 정책일 때만)
         buildAddColumns(sb, tables);
-
+        Log.info(tables.toString());
         // 3. 외래키 제약조건 (FK)
         new ForeignKeyGenerator(dialect, tables).generate(sb);
-      /*  buildForeignKeys(sb, tables);*/
-
         // 4. 인덱스 생성 (INDEX)
         buildIndexes(sb, tables);
-
-
-
-
         sb.append("]]>");
 
         return sb.toString();
@@ -115,61 +104,8 @@ public class DdlScriptBuilder {
         sb.append("\n");
     }
 
-    /**
-     * Step 3. 외래키 생성
-     */
-
-    private void buildForeignKeys(StringBuilder sb, List<TableMetadata> tables) {
-        sb.append("\t/* --- 3. FOREIGN KEYS --- */\n");
 
 
-        HashMap<String, List<String>> parentFieldTypes = new HashMap<>();
-
-        for (TableMetadata table : tables) {
-
-            //fk 부모 이름 정보들
-
-            List<String> parentNames = table.getParentNames();
-
-            
-            /// parentName이 있을 경우 HashMap에 parent pk 필드 타입값을 넣음
-            if( parentNames !=null)
-            {
-                addParentFieldTypes(parentNames, tables, parentFieldTypes);
-            }
-
-            for (ColumnMetadata col : table.getColumns()) {
-
-                if (col.isForeignKey()) {
-
-                    List<String> fkSqls = dialect.createAlterTableSql(table, col, parentFieldTypes);
-
-                    for (String sql : fkSqls) {
-                        appendStatement(sb, sql);
-
-                    }
-                }
-            }
-        }
-        sb.append("\n");
-    }
-
-    private void addParentFieldTypes(List<String> parentNames, List<TableMetadata> tables, HashMap<String, List<String>> fieldTypeResult) {
-        HashMap<String, TableMetadata> tableMap = (HashMap<String, TableMetadata>) tables.stream()
-                .collect(Collectors.toMap(TableMetadata::getTableName
-                        , t -> t));
-        for(String parentName : parentNames) {
-            tableMap.get(parentName).getColumns().forEach(col -> {
-
-                fieldTypeResult.putIfAbsent(parentName, new ArrayList<>());
-
-                if(col.isContainPrimaryKey()) {
-                    fieldTypeResult.get(parentName).add(col.getType());
-                }
-            });
-        }
-
-    }
 
     /**
      * Step 4. 인덱스 생성

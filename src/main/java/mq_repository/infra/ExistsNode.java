@@ -1,10 +1,10 @@
 package mq_repository.infra;
 
 import mq_mapper.domain.vo.DslStatement;
-import mq_mapper.infra.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package dsl_variable.v2;
 
-import utils.LogPrinter;
+import utils.MParserUtils;
 
 import javax.lang.model.element.TypeElement;
 import java.util.List;

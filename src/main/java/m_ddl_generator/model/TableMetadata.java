@@ -1,5 +1,8 @@
 package m_ddl_generator.model;
 
+import groovy.util.logging.Log;
+import utils.LogPrinter;
+
 import java.util.ArrayList;
 import java.util.List;
 

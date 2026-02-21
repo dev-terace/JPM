@@ -3,6 +3,7 @@ package m_ddl_generator.generator;
 import m_ddl_generator.dialect.SqlDialect;
 import m_ddl_generator.model.ColumnMetadata;
 import m_ddl_generator.model.TableMetadata;
+import utils.LogPrinter;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,12 +27,13 @@ public class ForeignKeyGenerator {
 
     public void generate(StringBuilder sb) {
         sb.append("\t/* --- 3. FOREIGN KEYS --- */\n");
-
         for (TableMetadata table : tableLookup.values()) {
             for (ColumnMetadata col : table.getColumns()) {
 
                 // FK인 경우에만 로직 수행
+
                 if (col.isForeignKey()) {
+
                     generateFkSql(sb, table, col);
                 }
             }
@@ -53,6 +55,7 @@ public class ForeignKeyGenerator {
 
         // 4. SQL 생성 및 추가
         List<String> sqls = dialect.createAlterTableSql(currentTable, col, parentFieldTypes);
+
         for (String sql : sqls) {
             appendStatement(sb, sql);
         }
@@ -63,7 +66,7 @@ public class ForeignKeyGenerator {
 
         // 방어 코드: 부모 테이블이 없는 경우 빈 리스트 반환
         if (parentTable == null) {
-            // 필요 시 로그 출력: LogPrinter.warn("Parent table not found: " + parentTableName);
+            LogPrinter.info("Parent table not found: " + parentTableName);
             return Collections.emptyList();
         }
 
@@ -73,6 +76,8 @@ public class ForeignKeyGenerator {
                 pkTypes.add(parentCol.getType());
             }
         }
+
+
         return pkTypes;
     }
 

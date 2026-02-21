@@ -24,7 +24,7 @@ public class MySqlDialect implements SqlDialect {
             return "CHAR(36)";
         }
 
-        LogPrinter.error(fieldType.toString(), "", "FieldTypeError MysqlDialect class", null);
+
         return null;
     }
 
@@ -113,6 +113,8 @@ public class MySqlDialect implements SqlDialect {
                     table.getTableName(), constraintName, col.getName(),
                     col.getFkTargetTable(), col.getFkTargetColumn(), col.getOnDeleteAction()));
         }
+
+
         return sql;
     }
 

@@ -1,40 +1,18 @@
 package mq_repository.infra;
 
-import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.SqlMapperBinder;
-import mq_repository.domain.SqlNode;
 import mq_mapper.domain.vo.EntityMeta;
-import java.util.ArrayList;
-import java.util.List;
+import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 
-public class SelectNode implements SqlNode {
-    private final List<String> columns;
+public class ColumnResolver {
 
-    public SelectNode(List<String> columns) {
-        this.columns = columns;
-    }
-
-    @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
-        List<String> resolved = new ArrayList<>();
-        for (String col : columns) {
-            resolved.add(ColumnResolver.resolve(col, ctx));
-        }
-        ctx.action = "SELECT";
-        // 덮어쓰기 대신 누적
-        if (ctx.columns.isEmpty()) {
-            ctx.columns = String.join(", ", resolved);
-        } else {
-            ctx.columns = ctx.columns + ", " + String.join(", ", resolved);
-        }
-    }
-
-   private String resolveSelectColumn(String colStr, SqlMapperBinder.BuildContext ctx) {
+    public static String resolve(String colStr, SqlMapperBinder.BuildContext ctx) {
 
         String[] aliasPart = colStr.split("\\.");
         boolean aliasFound = aliasPart.length > 1;
-        String alias = aliasFound ? aliasPart[0] + "." : "";
+        String alias = aliasFound  ? aliasPart[0] + "." : "";
 
+        System.out.println("aliasPart = " + aliasPart.length + " alias = " + colStr);
 
         if (colStr.contains("::")) {
             String[] parts = colStr.split("::");
@@ -57,16 +35,13 @@ public class SelectNode implements SqlNode {
             throw new RuntimeException("[convertGetterToField] 알 수 없는 메서드명: " + methodName);
         }
 
-        if (!isPrefix) return fieldName;
 
         EntityMeta entityMeta = EntityMetaRegistry.getEntityMeta(className);
         String tableName = EntityMetaRegistry.getTable(className);
         if (entityMeta == null || tableName == null) return fieldName;
 
         String colName = entityMeta.getColumn(fieldName);
-        return tableName + "." + (colName != null ? colName : fieldName);
+        return isPrefix  ? tableName + "." + (colName != null ? colName : fieldName) :
+                                             (colName != null ? colName : fieldName);
     }
-
-
-    @Override public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
 }

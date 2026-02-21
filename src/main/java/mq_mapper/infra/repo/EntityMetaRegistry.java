@@ -1,6 +1,6 @@
-package mq_mapper.infra;
+package mq_mapper.infra.repo;
 
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 import utils.MParserUtils;
 
 import java.util.HashMap;
@@ -9,26 +9,52 @@ import java.util.Map;
 
 public class EntityMetaRegistry {
     // Key: EntityClassName (예: MEntity3), Value: FieldMetadata Map (Key: Java 필드명, Value: DB 컬럼명)
-    private static final Map<String, Map<String, String>> registry = new HashMap<>();
+    private static final Map<String, EntityMeta> registry = new HashMap<>();
+
+    // Key: Repository 파일의 절대 경로 (repoPath)
+    // Value: Segment 파일의 절대 경로 (segmentPath)
+    private static final Map<String, String> repoToSegmentMap = new HashMap<>();
+
+
+    public static void registerSegmentPath(String repoPath, String segmentPath) {
+        repoToSegmentMap.put(repoPath, segmentPath);
+    }
+
+    public static String getSegmentPath(String repoPath) {
+        return repoToSegmentMap.get(repoPath);
+    }
 
 
     private static final Map<String, Class<?>> classMap = new HashMap<>();
     // 클래스명 -> 테이블명 매핑 (선택 사항, 필요시 사용)
     private static final Map<String, String> tableRegistry = new HashMap<>();
 
+    private final Map<String, String> columnToField = new HashMap<>();
 
-
-    private static final Map<String, String> fieldToType = new HashMap<>(); // MFieldType은 String으로 저장
-
-
-    public static String getFieldType(String fieldName) {
-        return fieldToType.get(fieldName);
+    public void addMapping(String fieldName, String columnName) {
+        columnToField.put(columnName, fieldName); // 역방향 추가
     }
 
 
+    public static String getFieldType(String entityName, String fieldName) {
+        if (entityName == null || entityName.isEmpty()) return null;
+        EntityMeta entityMeta = registry.get(entityName);
+        System.out.println("[getFieldType] entityName=" + entityName + " fieldName=" + fieldName + " meta=" + (entityMeta != null ? "found" : "null"));
+        if (entityMeta == null) return null;
+        return entityMeta.getFieldType(fieldName);
+    }
+
+
+
+
+
     // MParserUtils의 결과를 Registry에 등록
+
     public static void register(String entityName, List<List<MParserUtils.Pair>> rawMeta) {
-        Map<String, String> fieldToColumn = new HashMap<>();
+
+
+        String tableName = getTable(entityName);
+        EntityMeta entityMeta = new EntityMeta(tableName);
 
         for (List<MParserUtils.Pair> fieldInfo : rawMeta) {
             String fieldName = null;  // Java 변수명 (예: level, isActive)
@@ -54,17 +80,20 @@ public class EntityMetaRegistry {
             }
 
             if (fieldName != null) {
-                fieldToColumn.put(fieldName, columnName);
-                if (typeName != null) fieldToType.put(fieldName, typeName);
+                entityMeta.addMapping(fieldName, columnName);
+                if (typeName != null) entityMeta.addTypeMapping(fieldName, typeName);
+
+                System.out.println("[register] tableName=" + tableName+", columnName=" + columnName + ", typeName=" + typeName);
+
+
             }
-
-
-
         }
-        registry.put(entityName, fieldToColumn);
+
+        registry.put(entityName, entityMeta);
     }
 
-    // Java 필드명으로 DB 컬럼명 조회
+
+/*    // Java 필드명으로 DB 컬럼명 조회
     public static String getColumn(String entityName, String fieldName) {
         if (!registry.containsKey(entityName)) {
             return fieldName; // 등록되지 않은 엔티티면 필드명 그대로 반환
@@ -82,7 +111,7 @@ public class EntityMetaRegistry {
             }
         }
         return null;
-    }
+    }*/
 
 
     // --- (옵션) 테이블명 관련 유틸 ---
@@ -108,23 +137,13 @@ public class EntityMetaRegistry {
 
 
 
-    public static utils.EntityMeta getEntityMeta(String entityName) {
+    public static EntityMeta getEntityMeta(String entityName) {
         // 1. 레지스트리에 해당 엔티티 정보가 없으면 null 반환
         if (!registry.containsKey(entityName)) {
             return null;
         }
 
-        // 2. 테이블명을 가져와서 EntityMeta 객체 생성
-        String tableName = getTable(entityName);
-        utils.EntityMeta meta = new utils.EntityMeta(tableName);
-
-        // 3. 레지스트리에 저장된 필드-컬럼 매핑 정보를 EntityMeta 객체에 모두 주입
-        Map<String, String> fieldMap = registry.get(entityName);
-        for (Map.Entry<String, String> entry : fieldMap.entrySet()) {
-            meta.addMapping(entry.getKey(), entry.getValue());
-        }
-
-        return meta;
+        return registry.get(entityName);
     }
 
 }

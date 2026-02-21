@@ -2,6 +2,8 @@ package utils;
 
 import java.io.File;
 
+
+@Deprecated
 public class StringClassToFileUtils {
 
     /**

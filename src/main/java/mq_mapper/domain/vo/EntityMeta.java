@@ -1,6 +1,6 @@
-package utils;
+package mq_mapper.domain.vo;
 
-import mq_mapper.infra.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,6 +45,9 @@ public class EntityMeta {
 
 
     public String getFieldType(String fieldName) { // 🚀 추가
+
+        System.out.println("[디버그] fieldToType 전체: " + fieldToType);
+        System.out.println("[디버그] getFieldType 요청: " + fieldName + " -> " + fieldToType.get(fieldName));
         return fieldToType.get(fieldName);
     }
 

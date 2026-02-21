@@ -2,10 +2,11 @@ package mq_mapper.infra;
 
 import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.domain.vo.MethodMeta;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 import mq_repository.domain.SqlNode;
 import mq_repository.domain.enums.GroupType;
 import mq_repository.infra.*;
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ public class SqlMapperBinder {
     public static class BuildContext {
         public String action  = "";
         public String columns = "";
+
 
 
 
@@ -72,12 +74,15 @@ public class SqlMapperBinder {
 
 
 
+
+
     public String generateSqlFromStatements(List<DslStatement> statements, EntityMeta entityMeta) {
         // 1. 새로운 컨텍스트 생성 (서브쿼리용 독립 공간)
         BuildContext ctx = new BuildContext(entityMeta);
 
         // 2. 별칭 사전 스캔 (서브쿼리 내의 JOIN 별칭 등 파악)
         preScanAliases(statements, ctx);
+
 
         // 3. Statement -> Node 트리 변환
         List<SqlNode> nodes = parseToNodes(statements, ctx, entityMeta);
@@ -200,9 +205,11 @@ public class SqlMapperBinder {
         String actualTable = (meta != null) ? meta.getTableName() : rawTable;
         String alias = stmt.getArgs().size() >= 2 ? stmt.getArgs().get(1) : actualTable;
 
-        ctx.tableAliases.put(actualTable, alias);
-        ctx.tableAliases.put(rawTable,    alias);
-        ctx.tableAliases.put(alias,       actualTable); // 역방향
+        System.out.println("[preScanFrom] rawTable=" + rawTable + " actualTable=" + actualTable + " alias=" + alias);
+
+        ctx.tableAliases.put(actualTable, alias);   // order_items -> order_items
+        ctx.tableAliases.put(rawTable, alias);       // OrderItemEntity -> order_items
+        ctx.tableAliases.put(alias, actualTable);
     }
 
     private void preScanJoin(DslStatement stmt, BuildContext ctx) {
@@ -210,7 +217,7 @@ public class SqlMapperBinder {
 
         String rawClass = cleanClassName(stmt.getArgs().get(0));
         EntityMeta meta = EntityMetaRegistry.getEntityMeta(rawClass);
-        String actualTable = (meta != null) ? meta.getTableName() : rawClass;
+        String actualTable = (meta != null) ? EntityMetaRegistry.getTable(meta.getTableName()) : rawClass;
 
         String explicitAlias = null;
         String rightColArg = stmt.getArgs().get(2);
@@ -245,6 +252,9 @@ public class SqlMapperBinder {
 
 
 
+
+
+
         for (DslStatement stmt : statements) {
             String cmd = stmt.getCommand();
             if (cmd.contains("Join") || cmd.equals("whereExistsGroup") || cmd.equals("whereNotExistsGroup")) {
@@ -271,11 +281,13 @@ public class SqlMapperBinder {
             List<Object> resolvedArgs = resolveArgs(stmt.getArgs(), entityMeta, ctx);
             List<String> args = toStringList(resolvedArgs);
 
+
+
             switch (cmd) {
                 // ── SELECT ──────────────────────────────────────────────────
                 case "select":
                 case "selectRaw":
-                    nodes.add(new SelectNode(args));
+                    nodes.add(new SelectNode(stmt.getArgs()));
                     break;
 
                 // ── FROM ────────────────────────────────────────────────────
@@ -296,8 +308,8 @@ public class SqlMapperBinder {
                 case "innerJoin":
                 case "leftJoin":
                     // 🚀 테이블명 변환 적용 (Index 0이 조인할 테이블명 자리)
-                    args.set(0, resolveTableName(cleanClassName(args.get(0))));
-                    nodes.add(new JoinNode(cmd, args));
+                    args.set(0, args.get(0));
+                    nodes.add(new JoinNode(cmd, stmt.getArgs()));
                     break;
 
                 case "innerJoinGroup":
@@ -317,9 +329,9 @@ public class SqlMapperBinder {
 
                     whereClause.addCondition(new ConditionNode(
                             "AND",
-                            args.get(0),
+                            stmt.getArgs().get(0),
                             args.get(1),
-                            resolveSqlValue(stmt.getArgs().get(0), rawValue) // 👈 좌항의 메타데이터를 참조하여 우항 포맷팅
+                            resolveSqlValue(stmt.getArgs().get(0), rawValue, ctx) // 👈 좌항의 메타데이터를 참조하여 우항 포맷팅
                     ));
                     break;
 
@@ -327,9 +339,9 @@ public class SqlMapperBinder {
 
                 case "or":
                     whereClause.addCondition(new ConditionNode(
-                            "OR", args.get(0), args.get(1),
+                            "OR", stmt.getArgs().get(0), args.get(1),
                             // 🚀 [수정]
-                            resolveSqlValue(stmt.getArgs().get(0), args.get(2))
+                            resolveSqlValue(stmt.getArgs().get(0), args.get(2), ctx)
                     ));
                     break;
 
@@ -357,24 +369,24 @@ public class SqlMapperBinder {
                 case "deleteFrom": nodes.add(new ActionNode("DELETE")); break;
                 case "insertInto":
                     // 🚀 INSERT 문 테이블명 변환 적용
-                    args.set(0, resolveTableName(cleanClassName(args.get(0))));
+                   /* args.set(0, resolveTableName(cleanClassName(args.get(0))));*/
                     nodes.add(new InsertNode(args));
                     break;
 
                 case "set":
                 case "setRaw":
                     // 🚀 [수정] UPDATE의 SET 구문도 동일하게 처리
-                    nodes.add(new SetNode(args.get(0), resolveSqlValue(stmt.getArgs().get(0), args.get(1))));
+                    nodes.add(new SetNode(stmt.getArgs().get(0), resolveSqlValue(stmt.getArgs().get(0), args.get(1), ctx)));
                     break;
 
                 case "value":
                     // 🚀 [수정] INSERT 문 등
-                    nodes.add(new ValueNode(args.get(0), resolveSqlValue(stmt.getArgs().get(0), args.get(1))));
+                    nodes.add(new ValueNode(stmt.getArgs().get(0), resolveSqlValue(stmt.getArgs().get(0), args.get(1), ctx)));
                     break;
 
                 // ── 기타 (Sort, Limit 등) ──────────────────────────────────
-                case "groupBy":  nodes.add(new GroupByNode(args));  break;
-                case "orderBy":  nodes.add(new OrderByNode(args));  break;
+                case "groupBy":  nodes.add(new GroupByNode(stmt.getArgs()));  break;
+                case "orderBy":  nodes.add(new OrderByNode(stmt.getArgs()));  break;
                 case "limit":    nodes.add(new LimitOffsetNode("LIMIT", args.get(0))); break;
                 case "offset":   nodes.add(new LimitOffsetNode("OFFSET", args.get(0))); break;
             }
@@ -395,7 +407,9 @@ public class SqlMapperBinder {
         GroupNode group = new GroupNode(type);
         for (int j = 0; j < subStatements.size(); j++) {
             DslStatement s = subStatements.get(j);
-            List<String> args = toStringList(resolveArgs(s.getArgs(), entityMeta, ctx));
+            List<String> args = s.getArgs().stream().map(arg ->  ColumnResolver.resolve(arg, ctx)).collect(Collectors.toList());
+
+                    /*toStringList(resolveArgs(s.getArgs(), entityMeta, ctx));*/
 
             if (isGroupOpen(s.getCommand())) {
                 List<DslStatement> nested = extractGroupStatements(subStatements, j);
@@ -581,6 +595,8 @@ public class SqlMapperBinder {
         int lastPipeIdx = arg.lastIndexOf('|');
         int doubleColonIdx = arg.indexOf("::");
 
+
+        System.out.println("[resolveArg] arg=" + arg + " tableAliases=" + tableAliases);
         // '::' 이후에 '|'가 있거나, '::'가 없어도 마지막에 '|'가 있는 경우 별칭(AS)으로 판단
         if (lastPipeIdx > 0 && lastPipeIdx > doubleColonIdx) {
             asAlias = " AS " + arg.substring(lastPipeIdx + 1);
@@ -768,66 +784,36 @@ public class SqlMapperBinder {
     // 값(Value) 포맷팅 유틸리티
     // -------------------------------------------------------------------------
 // 🚀 기존 formatSqlValue를 대체하는 지능형 값 포맷터
-    private String resolveSqlValue(String rawLeftArg, String resolvedVal) {
+    private String resolveSqlValue(String rawLeftArg, String resolvedVal, BuildContext ctx) {
         if (resolvedVal == null || resolvedVal.trim().isEmpty()) return "NULL";
         String val = resolvedVal.trim();
 
-        // 1. 이미 처리된 리터럴/바인딩 패스
+        if (val.contains("#{") || (val.startsWith("'") && val.endsWith("'"))) return val;
 
-        if (val.contains("#{") || (val.startsWith("'") && val.endsWith("'"))) {
-            return val;
-        }
 
-        // 2. 좌항 필드명 추출 로직 강화
-        String fieldName = null;
-        if (rawLeftArg != null) {
-            if (rawLeftArg.contains("::")) {
-                // "OrderEntity::getIsDeleted" -> "isDeleted"
-                fieldName = extractFieldName(rawLeftArg.split("::")[1]);
-            } else if (rawLeftArg.contains(".")) {
-                // "o.is_deleted" 또는 "OrderEntity.isDeleted" -> "isDeleted"
-                String[] parts = rawLeftArg.split("\\.");
-                fieldName = parts[parts.length - 1];
-            } else {
-                fieldName = rawLeftArg;
-            }
-        }
+        System.out.println("rawLeftArg=" + rawLeftArg + " resolvedVal=" + resolvedVal);
 
-        // 3. 타입 정보 조회 (Registry 활용)
-        String fieldType = EntityMetaRegistry.getFieldType(fieldName);
+        if (val.matches("-?\\d+(\\.\\d+)?")) return val;
 
-        // 🚀 [핵심 로직] 불리언 타입은 무조건 따옴표 제거
-        if ("BOOLEAN".equalsIgnoreCase(fieldType) ||
-                "true".equalsIgnoreCase(val) || "false".equalsIgnoreCase(val)) {
-            return val.toUpperCase(); // 'TRUE' (X) -> TRUE (O)
-        }
-
-        // 4. 숫자 타입 처리
-        if (fieldType != null && !isQuoteNeeded(fieldType)) {
-            // 숫자 뒤에 붙은 'L'이나 'f' 제거
-            return val.replaceAll("(?i)[Lf]$", "");
-        }
-
-        // 5. 그 외 (STRING, DATE, UUID 등)는 따옴표 장착
-        // 단, 숫자로만 이루어진 값인데 타입을 모르는 경우를 위해 방어 로직 추가
-        if (val.matches("-?\\d+(\\.\\d+)?")) {
-            return val;
-        }
-
-        return "'" + val + "'";
+        return val;
     }
 
 
     private String resolveTableName(String entityOrTableName) {
         if (entityOrTableName == null) return null;
 
+
+        System.out.println("entityOrTableName=" + entityOrTableName);
         // 1. 엔티티 메타 관리자에서 클래스명으로 메타 정보 조회 (프로젝트 상황에 맞게 수정!)
         EntityMeta meta = EntityMetaRegistry.getEntityMeta(entityOrTableName);
 
         // 2. 메타 정보가 존재하면 해당 테이블명 반환, 없으면 입력된 문자열 그대로 반환
         if (meta != null && meta.getTableName() != null) {
-            return meta.getTableName();
+            System.out.println("meta get TAble Name=" + EntityMetaRegistry.getTable(entityOrTableName));
+            return EntityMetaRegistry.getTable(entityOrTableName);
         }
+
+
         return entityOrTableName;
     }
 

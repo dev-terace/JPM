@@ -1,10 +1,10 @@
 package mq_repository.infra;
 
-import mq_mapper.infra.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 import mq_mapper.infra.SqlMapperBinder;
 
 import mq_repository.domain.SqlNode;
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 
 import java.util.List;
 
@@ -26,28 +26,52 @@ public class JoinNode implements SqlNode {
     public void apply(SqlMapperBinder.BuildContext ctx) {
         String cleanedClass = cleanClassName(this.rawClass);
         EntityMeta meta = EntityMetaRegistry.getEntityMeta(cleanedClass);
-        String actualTable = (meta != null) ? meta.getTableName() : cleanedClass;
+        String actualTable = (meta != null) ? EntityMetaRegistry.getTable(meta.getTableName()) : cleanedClass;
 
-        String joinAlias = ctx.tableAliases.getOrDefault(actualTable, actualTable);
+
 
         // 🚀 leftCol에 접두어가 없으면 메인 테이블(tablePrefix) 접두어 추가
-        String leftColWithPrefix = this.leftCol;
-        if (!this.leftCol.contains(".")) {
-            leftColWithPrefix = ctx.tablePrefix + "." + this.leftCol;
+
+
+
+        String resolvedLeftCol = ColumnResolver.resolve(leftCol, ctx);
+        String resolvedRightCol = ColumnResolver.resolve(rightCol, ctx);
+
+
+        String[] colonParts = leftCol.split("::");
+        String prefix = colonParts[0];
+        assert meta != null;
+        String leftColTable = prefix.equals(meta.getTableName())
+                ? prefix
+                : prefix.contains(".") ? prefix.split("\\.")[1] : prefix;
+
+
+/*        String rightColTable = rightCol.split("::")[0].equals(meta.getTableName()) ? rightCol.split("::")[0] :
+                                                                                    rightCol.split("\\.")[1].split("::")[0];*/
+
+
+
+        String alias;
+        String joinStr;
+
+        System.out.print("[joinNode] leftColTable :"  + leftColTable);
+        if(leftColTable.equals(meta.getTableName()))
+        {
+            alias = resolvedLeftCol.split("\\.")[0];
+            joinStr = this.joinType + " " + actualTable +" "+ alias + " ON " + resolvedLeftCol + " = " + resolvedRightCol;
+        }else{
+            throw new RuntimeException("1번째 인자 값과 2번째 인자 값이 같도록 설정 해주세요.");
         }
 
-        String resolvedLeftCol = forceResolveColumn(leftColWithPrefix, ctx);
-        String resolvedRightCol = forceResolveColumn(correctRightCol(this.rightCol, joinAlias), ctx);
 
-        String aliasSuffix = joinAlias.equals(actualTable) ? "" : " AS " + joinAlias;
-        String joinStr = this.joinType + " " + actualTable + aliasSuffix + " ON " + resolvedLeftCol + " = " + resolvedRightCol;
+
 
         ctx.joins.add(joinStr);
     }
 
     @Override
     public String toSql(SqlMapperBinder.BuildContext ctx) {
-        String cleanedClass = cleanClassName(this.rawClass);
+       /* String cleanedClass = cleanClassName(this.rawClass);
         EntityMeta meta = EntityMetaRegistry.getEntityMeta(cleanedClass);
         String actualTable = (meta != null) ? meta.getTableName() : cleanedClass;
 
@@ -64,7 +88,9 @@ public class JoinNode implements SqlNode {
         String aliasSuffix = joinAlias.equals(actualTable) ? "" : " AS " + joinAlias;
 
         return String.format("%s %s%s ON %s = %s",
-                this.joinType, actualTable, aliasSuffix, resolvedLeftCol, resolvedRightCol);
+                this.joinType, actualTable, aliasSuffix, resolvedLeftCol, resolvedRightCol);*/
+
+        return "";
     }
 
     // -------------------------------------------------------------------------

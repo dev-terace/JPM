@@ -4,6 +4,7 @@ import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OrderByNode implements SqlNode {
     private final List<String> args;
@@ -11,14 +12,25 @@ public class OrderByNode implements SqlNode {
 
     @Override
     public void apply(SqlMapperBinder.BuildContext ctx) {
-        String col = args.get(0);
-        // 기존 isBareName 로직 대체 (단순 문자열에 점(.)이 없으면 접두어 추가)
-        if (ctx.requiresPrefix && !col.contains(".")) {
-            col = ctx.tablePrefix + "." + col;
+        // 마지막 인자가 ASC/DESC면 방향으로 처리
+        String direction = "";
+        List<String> colArgs = args;
+
+        if (!args.isEmpty()) {
+            String last = args.get(args.size() - 1).trim().toUpperCase();
+            if (last.equals("ASC") || last.equals("DESC")) {
+                direction = " " + last;
+                colArgs = args.subList(0, args.size() - 1);
+            }
         }
-        String spec = col + (args.size() > 1 ? " " + args.get(1) : "");
-        ctx.orderBys.add(spec); // 키워드 없이 순수 조건만 리스트에 담기
+
+        List<String> resolved = colArgs.stream()
+                .map(s -> ColumnResolver.resolve(s, ctx))
+                .collect(Collectors.toList());
+
+        ctx.orderBys.add(String.join(", ", resolved) + direction);
     }
+
 
     @Override public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
 }

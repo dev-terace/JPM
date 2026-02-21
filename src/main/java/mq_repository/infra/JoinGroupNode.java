@@ -3,29 +3,30 @@ package mq_repository.infra;
 
 
 import mq_mapper.domain.vo.DslStatement;
+import mq_mapper.infra.repo.EntityMetaRegistry;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
 
-import utils.EntityMeta;
+import mq_mapper.domain.vo.EntityMeta;
 
 import java.util.List;
 
 public class JoinGroupNode implements SqlNode {
-    private final String joinType;      // "INNER JOIN" 또는 "LEFT JOIN"
-    private final String alias;         // 서브쿼리 별칭 (예: sub)
-    private final String leftCol;       // ON 조건의 왼쪽 컬럼
-    private final String rightCol;      // ON 조건의 오른쪽 컬럼
-    private final List<DslStatement> subStatements;
-    private final EntityMeta entityMeta;
+    private final String joinType;
+    private final String targetClass;   // 예: "OrderItemEntity.class"
+    private final String leftCol;       // 예: "orders.id"
+    private final String rightCol;      // 예: "item_summary.order_id"
+    private final List<DslStatement> subStatements; // 👈 이 변수명으로 통일
+    private final EntityMeta mainEntityMeta;
 
     public JoinGroupNode(String cmd, List<String> args, List<DslStatement> subStatements, EntityMeta entityMeta) {
         this.joinType = cmd.startsWith("left") ? "LEFT JOIN" : "INNER JOIN";
-        // args 구조: [alias, leftCol, rightCol] 가정
-        this.alias = (args.size() > 0) ? args.get(0) : "sub_query";
+        // args: [targetClass, leftCol, rightCol]
+        this.targetClass = (!args.isEmpty()) ? args.get(0) : "";
         this.leftCol = (args.size() > 1) ? args.get(1) : "";
         this.rightCol = (args.size() > 2) ? args.get(2) : "";
-        this.subStatements = subStatements;
-        this.entityMeta = entityMeta;
+        this.subStatements = subStatements; // 생성자 주입
+        this.mainEntityMeta = entityMeta;
     }
 
     @Override
@@ -38,32 +39,39 @@ public class JoinGroupNode implements SqlNode {
 
     @Override
     public String toSql(SqlMapperBinder.BuildContext ctx) {
-        // 1. 서브쿼리 내부를 별도로 빌드 (재귀적 호출)
-        // 실제로는 SqlMapperBinder의 새로운 인스턴스를 만들거나
-        // 전용 서브쿼리 빌더를 호출해야 합니다.
-        String subQuerySql = buildSubQuery(ctx);
-
-        // 2. ON 조건 해석
-        String resolvedLeft = resolveColumn(leftCol, ctx);
-        // 오른쪽 컬럼은 서브쿼리의 별칭(alias)을 따르도록 강제
-        String resolvedRight = alias + "." + (rightCol.contains(".") ? rightCol.split("\\.")[1] : rightCol);
-
-        // 3. 최종 조립: JOIN (SELECT ...) AS alias ON ...
-        return String.format("%s (%s) AS %s ON %s = %s",
-                joinType, subQuerySql, alias, resolvedLeft, resolvedRight);
-    }
-
-    private String buildSubQuery(SqlMapperBinder.BuildContext parentCtx) {
-        // 💡 중요: 서브쿼리용 Binder를 새로 생성하여 독립적인 쿼리를 뽑아냅니다.
-        // 이 로직은 프로젝트의 SqlMapperBinder 구조에 따라 달라질 수 있습니다.
-        SqlMapperBinder subBinder = new SqlMapperBinder();
-        return subBinder.generateSqlFromStatements(subStatements, entityMeta);
-    }
-
-    private String resolveColumn(String col, SqlMapperBinder.BuildContext ctx) {
-        if (!col.contains(".") && ctx.requiresPrefix) {
-            return ctx.tablePrefix + "." + col;
+        // 1. 진짜 별칭(Alias) 추출: "item_summary.order_id" -> "item_summary"
+        String realAlias = "sub_query";
+        if (rightCol.contains(".")) {
+            realAlias = rightCol.split("\\.")[0];
+        } else if (rightCol.contains("|")) {
+            realAlias = rightCol.split("\\|")[0];
         }
-        return col; // 상세한 Meta 치환 로직은 기존 ConditionNode와 동일하게 적용 가능
+
+        // 2. 서브쿼리용 메타데이터 결정
+        // Join 대상인 OrderItemEntity.class의 메타를 가져와야 서브쿼리 내부 컬럼명이 정확히 변환됩니다.
+        String cleanedClass = targetClass.replace(".class", "").replace("class ", "");
+        EntityMeta subMeta = EntityMetaRegistry.getEntityMeta(cleanedClass);
+
+        // 서브쿼리 전용 바인더 생성 및 실행
+        SqlMapperBinder subBinder = new SqlMapperBinder();
+        // 🚀 여기서 this.subStatements를 사용합니다!
+        String subQuerySql = subBinder.generateSqlFromStatements(this.subStatements, subMeta != null ? subMeta : mainEntityMeta);
+
+        // 3. ON 조건 정제
+        String resolvedLeft = leftCol.replace("|", ".");
+        String resolvedRight = rightCol.replace("|", ".");
+
+        // 최종 SQL 조립
+        return String.format("%s (\n%s\n) AS %s ON %s = %s",
+                joinType,
+                indent(subQuerySql),
+                realAlias,
+                resolvedLeft,
+                resolvedRight);
+    }
+
+    private String indent(String sql) {
+        if (sql == null || sql.isEmpty()) return "";
+        return "    " + sql.replace("\n", "\n    ");
     }
 }
