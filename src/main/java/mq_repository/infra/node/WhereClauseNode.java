@@ -1,9 +1,9 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 import mq_repository.domain.enums.GroupType;
-import mq_repository.infra.GroupNode;
 
 public class WhereClauseNode implements SqlNode {
     private final GroupNode root = new GroupNode(GroupType.AND);
@@ -13,7 +13,7 @@ public class WhereClauseNode implements SqlNode {
     public boolean isEmpty() { return root.isEmpty(); }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
+    public String toSql(BuildContext ctx) {
         if (root.isEmpty()) return "";
         // 최하위 root는 괄호를 제거하고 "WHERE " 접두사만 붙임
         String content = root.toSql(ctx);
@@ -25,10 +25,10 @@ public class WhereClauseNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         if (!isEmpty()) {
             // Binder의 wheres 리스트에 조립된 SQL을 통째로 넣음
-            ctx.wheres.add(this.toSql(ctx));
+            ctx.getWheres().add(this.toSql(ctx));
         }
     }
 }

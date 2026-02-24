@@ -1,4 +1,4 @@
-package mq_repository.infra.generator;
+package mq_repository.infra.ast;
 
 import annotation.JpmRepository;
 import annotation.MqInject;
@@ -11,8 +11,8 @@ import mq_mapper.domain.vo.MethodMeta;
 import mq_mapper.domain.vo.RepoMeta;
 import mq_mapper.infra.MybatisXmlGenerator;
 import mq_mapper.infra.ResultMapMeta;
+import mq_mapper.infra.ast.MqRepoParserV3;
 import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.utils.MqRepoParserV2;
 import utils.LogPrinter;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -68,10 +68,11 @@ public class AutoDMLGenerator {
 
 
             Trees tree = Trees.instance(this.processingEnv);
-            RepoMeta repo = MqRepoParserV2.parseRepo(repoElement, this.processingEnv, tree);
+            RepoMeta repo =  new MqRepoParserV3(entityMetaRegistry)
+                    .parseRepo(repoElement, this.processingEnv, tree);
+            /*MqRepoParserV2.parseRepo(repoElement, this.processingEnv, tree);*/
+
             List<MybatisXmlGenerator.MethodData> methodDataList = new ArrayList<>();
-
-
 
 
             try {

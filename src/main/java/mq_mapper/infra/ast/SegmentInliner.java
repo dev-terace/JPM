@@ -3,6 +3,7 @@ package mq_mapper.infra.ast;
 import com.sun.source.tree.*;
 import com.sun.source.util.Trees;
 import mq_mapper.domain.vo.MethodMeta;
+import mq_mapper.infra.ast.utils.MethodTreeUtil;
 import mq_mapper.infra.repo.EntityMetaRegistry;
 import utils.LogPrinter;
 
@@ -10,7 +11,6 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 세그먼트(Segment) 클래스의 특정 메서드를 현재 MethodMeta 에 인라인합니다.

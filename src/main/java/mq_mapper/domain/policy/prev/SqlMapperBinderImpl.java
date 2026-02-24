@@ -1,6 +1,7 @@
-package mq_mapper.domain.policy;
+package mq_mapper.domain.policy.prev;
 
 import config.AppConfig;
+import mq_mapper.domain.policy.SqlMapperBinder;
 import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.domain.vo.MethodMeta;
 import mq_mapper.infra.repo.EntityMetaRegistry;
@@ -22,15 +23,17 @@ import java.util.stream.Collectors;
  * 2. Main loop: Statement를 순회하며 각 SQL 절(SELECT/WHERE/JOIN …)을 빌드
  * 3. Assemble: 수집된 절을 하나의 SQL 문자열로 조립
  */
-public class SqlMapperBinderImpl implements SqlMapperBinder {
+
+@Deprecated
+public class SqlMapperBinderImpl  {
 
     // -------------------------------------------------------------------------
     // 내부 타입
     // -------------------------------------------------------------------------
 
-    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
+   /* private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
-    /** generateSql 한 번의 호출 동안 유지되는 빌드 컨텍스트. */
+    *//** generateSql 한 번의 호출 동안 유지되는 빌드 컨텍스트. *//*
     public static class BuildContext {
         public String action  = "";
         public String columns = "";
@@ -56,11 +59,11 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
         public String orderBy = "";
         public String limitOffset = "";
 
-        /** 현재 유효한 테이블 별칭(또는 테이블명). WHERE/ORDER BY 접두어로 사용. */
+        *//** 현재 유효한 테이블 별칭(또는 테이블명). WHERE/ORDER BY 접두어로 사용. *//*
         public String tablePrefix;
-        /** 테이블명/클래스명 ↔ 별칭 양방향 맵. */
+        *//** 테이블명/클래스명 ↔ 별칭 양방향 맵. *//*
         public final Map<String, String> tableAliases = new HashMap<>();
-        /** JOIN 문이 하나라도 있으면 컬럼에 별칭 접두어를 강제. */
+        *//** JOIN 문이 하나라도 있으면 컬럼에 별칭 접두어를 강제. *//*
         public boolean requiresPrefix = false;
 
         public BuildContext() {
@@ -92,7 +95,7 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
 
         // 4. 노드 실행 (BuildContext에 데이터 적재)
         for (SqlNode node : nodes) {
-            node.apply(ctx);
+           *//* node.apply(ctx);*//*
         }
 
         // 5. 최종 조립
@@ -137,7 +140,7 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
     // 1단계 – Pre-scan: 별칭 맵 구성
     // -------------------------------------------------------------------------
 
-    /** FROM / innerJoin / leftJoin 선언을 미리 읽어 tableAliases를 채운다. */
+    *//** FROM / innerJoin / leftJoin 선언을 미리 읽어 tableAliases를 채운다. *//*
     private void preScanAliases(List<DslStatement> statements, BuildContext ctx) {
         try {
             int groupDepth = 0;
@@ -411,7 +414,7 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
                         break;
                     case "insertInto":
                         // 🚀 INSERT 문 테이블명 변환 적용
-                        /* args.set(0, resolveTableName(cleanClassName(args.get(0))));*/
+                        *//* args.set(0, resolveTableName(cleanClassName(args.get(0))));*//*
                         nodes.add(new InsertNode(args));
                         break;
 
@@ -454,9 +457,9 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
         }
     }
 
-    /**
+    *//**
      * 헬퍼 메서드: 서브 그룹(GroupNode) 내부를 재귀적으로 파싱합니다.
-     */
+     *//*
     private GroupNode parseToGroupNode(List<DslStatement> subStatements, GroupType type, BuildContext ctx, EntityMeta entityMeta) {
         try {
             GroupNode group = new GroupNode(type);
@@ -464,7 +467,7 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
                 DslStatement s = subStatements.get(j);
                 List<String> args = s.getArgs().stream().map(arg -> ColumnResolver.resolve(arg, ctx)).collect(Collectors.toList());
 
-                /*toStringList(resolveArgs(s.getArgs(), entityMeta, ctx));*/
+                *//*toStringList(resolveArgs(s.getArgs(), entityMeta, ctx));*//*
 
                 if (isGroupOpen(s.getCommand())) {
                     List<DslStatement> nested = extractGroupStatements(subStatements, j);
@@ -698,21 +701,21 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
                     String alias = parts[0];
                     String fieldName = parts[1];
 
-/*                    String actualTable = tableAliases.get(alias);
+*//*                    String actualTable = tableAliases.get(alias);
                     if (alias.matches("\\d+") || parts[1].matches("\\d+")) {
                         return arg + asAlias; // 상수/숫자 포함 시 그대로 반환
-                    }*/
+                    }*//*
 
 
                     if (alias != null) {
 
 
-                  /*  EntityMeta meta = entityMetaRegistry.getEntityMeta(actualTable);
-                    if (meta != null) {*/
-                       /* String dbCol = meta.getColumn(fieldName);
-                        String finalCol = (dbCol != null) ? dbCol : toSnakeCase(fieldName);*/
-                        return alias + "." + fieldName;/*alias + "." + finalCol + asAlias;*/
-                        /*}*/
+                  *//*  EntityMeta meta = entityMetaRegistry.getEntityMeta(actualTable);
+                    if (meta != null) {*//*
+                       *//* String dbCol = meta.getColumn(fieldName);
+                        String finalCol = (dbCol != null) ? dbCol : toSnakeCase(fieldName);*//*
+                        return alias + "." + fieldName;*//*alias + "." + finalCol + asAlias;*//*
+                        *//*}*//*
                     }
 
                     String dbCol = mainMeta.getColumn(fieldName);
@@ -761,21 +764,21 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
     // 소형 헬퍼
     // -------------------------------------------------------------------------
 
-    /** JOIN 문이 하나라도 있는지 확인 */
+    *//** JOIN 문이 하나라도 있는지 확인 *//*
 
 
-    /** "endGroup"을 제외하고 Group으로 끝나는 명령인지 */
+    *//** "endGroup"을 제외하고 Group으로 끝나는 명령인지 *//*
     private boolean isGroupOpen(String cmd) {
         return cmd.endsWith("Group") && !"endGroup".equals(cmd);
     }
 
-    /** ".class" 및 "class " 접두어 제거 */
+    *//** ".class" 및 "class " 접두어 제거 *//*
     private String cleanClassName(String raw) {
         if (raw.startsWith("class ")) raw = raw.substring(raw.lastIndexOf('.') + 1);
         return raw.replace(".class", "");
     }
 
-    /** getter 이름에서 필드명 추출 (getXxx → xxx) */
+    *//** getter 이름에서 필드명 추출 (getXxx → xxx) *//*
     private String extractFieldName(String methodName) {
         if (methodName.startsWith("get") && methodName.length() > 3) {
             return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
@@ -785,7 +788,7 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
 
 
 
-    /** Object 리스트 → String 리스트 변환 */
+    *//** Object 리스트 → String 리스트 변환 *//*
     private List<String> toStringList(List<Object> list) {
         return list.stream().map(Object::toString).collect(Collectors.toList());
     }
@@ -828,7 +831,7 @@ public class SqlMapperBinderImpl implements SqlMapperBinder {
 
         return entityOrTableName;
     }
-
+*/
 
 
 

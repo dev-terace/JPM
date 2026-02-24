@@ -38,6 +38,8 @@ tasks.withType(Jar).configureEach {
 
 }
 
+
+
 dependencies {
 
     // Gradle 플러그인 개발 시 필요한 API 포함
@@ -47,15 +49,15 @@ dependencies {
     compileOnly 'com.google.auto.service:auto-service-annotations:1.1.1'
     annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
     implementation 'com.google.auto.service:auto-service:1.1.1'
-    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.24.10'
-
+    /*implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.24.10'*/
+    compileOnly files("${System.getProperty('java.home')}/../lib/tools.jar")
 
 }
 
 
 
 jar {
-    finalizedBy shadowJar
+   /* finalizedBy shadowJar*/ //로컬 실행 시 주석 처리
 }
 
 

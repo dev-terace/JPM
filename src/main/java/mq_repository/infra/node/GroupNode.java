@@ -1,6 +1,7 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 import mq_repository.domain.enums.GroupType;
 
@@ -19,7 +20,7 @@ public class GroupNode implements SqlNode {
     public boolean isEmpty() { return children.isEmpty(); }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
+    public String toSql(BuildContext ctx) {
         if (children.isEmpty()) return "";
 
         StringBuilder sb = new StringBuilder();
@@ -53,7 +54,7 @@ public class GroupNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         // GroupNode는 단독으로 apply되지 않고 WhereClauseNode에 의해 관리됨
     }
 }

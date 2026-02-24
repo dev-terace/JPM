@@ -1,7 +1,9 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
+import mq_repository.infra.utils.ColumnResolver;
 
 public class SetNode implements SqlNode {
     private final String column;
@@ -13,22 +15,24 @@ public class SetNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
-        ctx.sets.add(ColumnResolver.resolve(column, ctx) + " = " + formatValue(value));
+    public void apply(BuildContext ctx) {
+
+        ctx.getSets().add(ColumnResolver.resolve(column, ctx) + " = " + value);
     }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
+    public String toSql(BuildContext ctx) { return ""; }
 
-    private String formatValue(String s) {
-        if (s == null) return "NULL";
+    /*private String formatValue(String s) {
+    *//*    if (s == null) return "NULL";
         if (s.startsWith("'") && s.endsWith("'")) return s;
         if (s.equals("?")) return s;
         if (s.contains("#{")) return s;
         if (s.equals("TRUE") || s.equals("FALSE")) return s;
         if (s.matches("-?\\d+(\\.\\d+)?")) return s;
-        if (s.matches("-?\\d+[Ll]")) return s.replaceAll("(?i)L", "");
+        if (s.matches("-?\\d+[Ll]")) return s.replaceAll("(?i)L", "");*//*
+        return s;
 
-        return "'" + s.replace("'", "''") + "'";
-    }
+        *//*return "'" + s.replace("'", "''") + "'";*//*
+    }*/
 }

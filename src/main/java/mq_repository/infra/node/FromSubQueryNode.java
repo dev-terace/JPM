@@ -1,7 +1,10 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
+import config.AppConfig;
+import mq_mapper.domain.policy.SqlMapperBinder;
 import mq_mapper.domain.vo.DslStatement;
-import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 
 import mq_mapper.domain.vo.EntityMeta;
@@ -12,6 +15,7 @@ public class FromSubQueryNode implements SqlNode {
     private final List<DslStatement> subStatements;
     private final EntityMeta entityMeta;
     private final String alias;
+    private final SqlMapperBinder subBinder = AppConfig.getSqlMapperBinder();
 
     public FromSubQueryNode(DslStatement stmt, List<DslStatement> subStatements, EntityMeta entityMeta) {
         this.subStatements = subStatements;
@@ -23,18 +27,18 @@ public class FromSubQueryNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         String subQuerySql = toSql(ctx);
         if (subQuerySql != null && !subQuerySql.isEmpty()) {
-            ctx.tables.add(subQuerySql);
+            ctx.getTables().add(subQuerySql);
             // 서브쿼리 별칭 등록
-            ctx.tableAliases.put(this.alias, "SUBQUERY");
+            ctx.getTableAliases().put(this.alias, "SUBQUERY");
         }
     }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
-        SqlMapperBinder subBinder = new SqlMapperBinder();
+    public String toSql(BuildContext ctx) {
+
         // 앞서 추가한 generateSqlFromStatements 메서드 호출
         String innerSql = subBinder.generateSqlFromStatements(subStatements, entityMeta);
 

@@ -1,4 +1,4 @@
-package mq_mapper.infra.ast;
+package mq_mapper.infra.ast.prev;
 
 import annotation.MqAssociation;
 import annotation.MqCollection;

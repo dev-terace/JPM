@@ -1,18 +1,18 @@
 
 
 import auto_ddl.AutoDDLPolicy;
-import com.github.javaparser.utils.Log;
 import com.google.auto.service.AutoService;
 import config.AppConfig;
-import m_ddl_generator.dialect.MySqlDialect;
-import m_ddl_generator.dialect.PostgreSqlDialect;
-import m_ddl_generator.dialect.SqlDialect;
+
 import m_ddl_generator.generator.AutoDDLGenerator;
 import m_ddl_generator.generator.JpmExecutorSourceWriter;
-import m_ddl_generator.parser.AnnotationMetadataLoader;
+
+import m_ddl_generator.parser.AnnotationMetadataLoaderV2;
 import m_ddl_generator.parser.MetadataLoader;
 import m_ddl_generator.writer.DdlWriter;
 import m_ddl_generator.writer.MyBatisXmlWriter;
+
+import mq_repository.infra.ast.AutoDMLGenerator;
 import utils.LogPrinter;
 
 
@@ -20,13 +20,13 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import java.util.HashSet;
+
 import java.util.Map;
 import java.util.Set;
 
 @AutoService(Processor.class)
 @SupportedOptions({ "url", "username", "password", "dbType", "auto", "projectDir" })
-@SupportedAnnotationTypes({ "annotation.MEntity", "annotation.MColumn" })
+@SupportedAnnotationTypes({ "annotation.*" })
 public class MDDLProcessor extends AbstractProcessor {
 
     @Override
@@ -75,7 +75,7 @@ public class MDDLProcessor extends AbstractProcessor {
 
 
             // 5. 컴포넌트 준비
-            MetadataLoader metadataLoader = new AnnotationMetadataLoader(processingEnv, roundEnv);
+            MetadataLoader metadataLoader = new AnnotationMetadataLoaderV2(processingEnv, roundEnv);
 
             // DB 타입에 따른 방언 설정
             AppConfig.sqlDialectInit(options);
@@ -83,15 +83,20 @@ public class MDDLProcessor extends AbstractProcessor {
             DdlWriter ddlWriter = new MyBatisXmlWriter(processingEnv.getFiler(), "m_ddl_generator.ddl.AutoDDL");
 
             // 6. Generator 생성 및 실행
-            AutoDDLGenerator generator = new AutoDDLGenerator(
+            new AutoDDLGenerator(
                     metadataLoader,
                     ddlWriter,
                     processingEnv,
                     new JpmExecutorSourceWriter(processingEnv),
                     options // 전체 옵션 전달 (url, username, password 포함됨)
-            );
+            ).generate();
 
-            generator.generate();
+
+            new AutoDMLGenerator(roundEnv, processingEnv).generate();
+
+
+
+
 
         } catch (Exception e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
@@ -101,4 +106,6 @@ public class MDDLProcessor extends AbstractProcessor {
 
         return true;
     }
+
+
 }

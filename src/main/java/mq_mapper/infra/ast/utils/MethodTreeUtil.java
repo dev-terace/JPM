@@ -1,4 +1,4 @@
-package mq_mapper.infra.ast;
+package mq_mapper.infra.ast.utils;
 
 import com.sun.source.tree.*;
 

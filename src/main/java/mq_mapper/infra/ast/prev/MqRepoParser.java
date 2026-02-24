@@ -1,4 +1,4 @@
-package mq_mapper.infra.ast;
+package mq_mapper.infra.ast.prev;
 
 import annotation.MqAssociation;
 import annotation.MqCollection;
@@ -11,7 +11,6 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import config.AppConfig;
 import mq_mapper.domain.vo.*;
 import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -1,6 +1,4 @@
-package mq_mapper.infra.ast;
-
-import com.sun.source.tree.*;
+package mq_mapper.infra.ast.utils;
 
 /**
  * 메서드 참조(ClassName::method) 관련 유틸.

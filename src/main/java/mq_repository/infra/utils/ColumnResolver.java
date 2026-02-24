@@ -1,21 +1,21 @@
-package mq_repository.infra;
+package mq_repository.infra.utils;
 
 import config.AppConfig;
 import mq_mapper.domain.vo.EntityMeta;
-import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
 import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.repo.EntityMetaRegistryImpl;
+import mq_repository.domain.BuildContext;
 
 public class ColumnResolver {
 
     private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
 
-    public static String resolve(String colStr, SqlMapperBinder.BuildContext ctx) {
+    public static String resolve(String colStr, BuildContext ctx) {
 
         String[] aliasPart = colStr.split("\\.");
         boolean aliasFound = aliasPart.length > 1;
-        String alias = aliasFound  ? aliasPart[0] + "." : "";
+       /* String alias = aliasFound  ? aliasPart[0] + "." : "";*/
 
         System.out.println("aliasPart = " + aliasPart.length + " alias = " + colStr);
 
@@ -23,8 +23,8 @@ public class ColumnResolver {
             String[] parts = colStr.split("::");
             String className = parts[0].trim();
             String methodName = parts[1].trim();
-            boolean needsPrefix = ctx.requiresPrefix || !ctx.joins.isEmpty();
-            return  alias + convertGetterToField(className, methodName, needsPrefix);
+            boolean needsPrefix = ctx.isRequiresPrefix() || !ctx.getJoins().isEmpty();
+            return  convertGetterToField(className, methodName, needsPrefix);
         }
 
         return colStr;
@@ -42,8 +42,8 @@ public class ColumnResolver {
 
 
         EntityMeta entityMeta = entityMetaRegistry.getEntityMeta(className);
-        String tableName = entityMetaRegistry.getTable(className);
-        if (entityMeta == null || tableName == null) return fieldName;
+        String tableName = entityMetaRegistry.getTable(entityMeta.getTableName());
+        if (tableName == null) return fieldName;
 
         String colName = entityMeta.getColumn(fieldName);
         return isPrefix  ? tableName + "." + (colName != null ? colName : fieldName) :

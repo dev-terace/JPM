@@ -1,8 +1,9 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+
 import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
+import mq_repository.infra.utils.ColumnResolver;
 
 public class ValueNode implements SqlNode {
     private final String column;
@@ -14,15 +15,15 @@ public class ValueNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
 
 
-        ctx.insertCols.add(ColumnResolver.resolve(column, ctx));
-        ctx.insertVals.add(formatValue(value));
+        ctx.getInsertCols().add(ColumnResolver.resolve(column, ctx));
+        ctx.getInsertVals().add(formatValue(value));
     }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
+    public String toSql(BuildContext ctx) { return ""; }
 
     private String formatValue(String s) {
         if (s == null) return "NULL";

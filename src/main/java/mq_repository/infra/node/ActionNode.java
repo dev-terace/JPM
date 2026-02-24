@@ -1,6 +1,7 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 
 public class ActionNode implements SqlNode {
@@ -11,9 +12,9 @@ public class ActionNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
-        ctx.action = this.action;
+    public void apply(BuildContext ctx) {
+        ctx.setAction(this.action);
     }
 
-    @Override public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
+    @Override public String toSql(BuildContext ctx) { return ""; }
 }

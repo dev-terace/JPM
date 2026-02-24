@@ -1,6 +1,6 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 
 import java.util.List;
@@ -13,9 +13,9 @@ public class InsertNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
-        ctx.action = "INSERT";
+    public void apply(BuildContext ctx) {
+        ctx.setAction("INSERT");
 
     }
-    @Override public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
+    @Override public String toSql(BuildContext ctx) { return ""; }
 }

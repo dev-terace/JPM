@@ -1,10 +1,12 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
 
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 
 
-import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
+import mq_repository.infra.utils.ColumnResolver;
 
 
 public class ConditionNode implements SqlNode {
@@ -20,14 +22,14 @@ public class ConditionNode implements SqlNode {
         this.value = value;
     }
 
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
+    public String toSql(BuildContext ctx) {
         String resolvedColumn = resolveSelectColumn(this.column, ctx);
         String formattedValue = formatValue(this.value);
         return resolvedColumn + " " + this.operator + " " + formattedValue;
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         // WhereClauseNode가 이 노드의 toSql()과 logicOperator를 사용해 조립할 것입니다.
     }
 
@@ -40,7 +42,7 @@ public class ConditionNode implements SqlNode {
     // 내부 헬퍼 메서드 (JoinNode의 로직과 유사)
     // -------------------------------------------------------------------------
 
-    private String resolveSelectColumn(String colStr, SqlMapperBinder.BuildContext ctx) {
+    private String resolveSelectColumn(String colStr, BuildContext ctx) {
         // OrderItemEntity::getProductName 형태 처리
 
             return ColumnResolver.resolve(colStr, ctx);

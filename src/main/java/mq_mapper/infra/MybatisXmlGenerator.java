@@ -1,8 +1,11 @@
 package mq_mapper.infra;
 
+import config.AppConfig;
 import mq_mapper.domain.vo.EntityMeta;
 import mq_mapper.domain.vo.MethodMeta;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
+import utils.LogPrinter;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +15,8 @@ public class MybatisXmlGenerator {
     /**
      * 하나의 메서드를 생성하는 데 필요한 데이터 묶음
      */
+
+    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
     public static class MethodData {
         private final MethodMeta methodMeta;
         private final ResultMapMeta meta;
@@ -43,6 +48,9 @@ public class MybatisXmlGenerator {
 
         if (rawArg.contains("::")) {
             String methodName = rawArg.split("::")[1].trim();
+
+
+
             if (methodName.startsWith("get") && methodName.length() > 3) {
                 return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
             }
@@ -68,7 +76,7 @@ public class MybatisXmlGenerator {
             String propertyName = toPropertyName(rawArg);
 
             // 1. EntityMetaRegistry에서 컬럼명을 가져옴
-            EntityMeta targetMeta = EntityMetaRegistry.getEntityMeta(className);
+            EntityMeta targetMeta = entityMetaRegistry.getEntityMeta(className);
             if (targetMeta != null) {
                 String dbCol = targetMeta.getColumn(propertyName);
 
@@ -114,6 +122,7 @@ public class MybatisXmlGenerator {
         // ========================================================
         // 1. XML 헤더 및 매퍼 여는 태그 (한 번만 생성)
         // ========================================================
+
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
         xml.append("<!DOCTYPE mapper PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" ")
                 .append("\"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n\n");
@@ -123,12 +132,25 @@ public class MybatisXmlGenerator {
         // ========================================================
         // 2. 전달받은 메서드 목록을 순회하며 ResultMap과 Query 생성
         // ========================================================
+
         for (MethodData method : methods) {
             MethodMeta methodMeta = method.getMethodMeta();
+
+
+
+
+
+
             ResultMapMeta meta = method.getMeta();
             String sql = method.getSql() != null ? method.getSql() : "";
 
             String methodName = methodMeta.getMethodName();
+
+
+            LogPrinter.info("[XML] methodName=" + methodName);
+            LogPrinter.info("[XML] targetType=" + methodMeta.getTargetType()); // null or "orders" 이면 문제
+            LogPrinter.info("[XML] statements=" + methodMeta.getStatements());
+
             String resultMapId = methodName + "ResultMap";
 
             // 생성된 SQL의 첫 단어를 확인하여 태그 종류(select/insert/update/delete) 결정
@@ -254,6 +276,9 @@ public class MybatisXmlGenerator {
         // 3. 매퍼 닫는 태그 (한 번만 생성)
         // ========================================================
         xml.append("</mapper>");
+
+
+
 
         return xml.toString();
     }

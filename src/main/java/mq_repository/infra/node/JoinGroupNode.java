@@ -1,12 +1,13 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
 
 
 import config.AppConfig;
+import mq_mapper.domain.policy.SqlMapperBinder;
 import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.repo.EntityMetaRegistryImpl;
-import mq_mapper.infra.SqlMapperBinder;
+
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 
 import mq_mapper.domain.vo.EntityMeta;
@@ -20,8 +21,7 @@ public class JoinGroupNode implements SqlNode {
     private final String rightCol;      // 예: "item_summary.order_id"
     private final List<DslStatement> subStatements; // 👈 이 변수명으로 통일
     private final EntityMeta mainEntityMeta;
-
-
+    private final SqlMapperBinder subBinder = AppConfig.getSqlMapperBinder();
     private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
     public JoinGroupNode(String cmd, List<String> args, List<DslStatement> subStatements, EntityMeta entityMeta) {
@@ -35,15 +35,15 @@ public class JoinGroupNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         String joinSql = toSql(ctx);
         if (!joinSql.isEmpty()) {
-            ctx.joins.add(joinSql);
+            ctx.getJoins().add(joinSql);
         }
     }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
+    public String toSql(BuildContext ctx) {
         // 1. 진짜 별칭(Alias) 추출: "item_summary.order_id" -> "item_summary"
         String realAlias = "sub_query";
         if (rightCol.contains(".")) {
@@ -57,8 +57,7 @@ public class JoinGroupNode implements SqlNode {
         String cleanedClass = targetClass.replace(".class", "").replace("class ", "");
         EntityMeta subMeta = entityMetaRegistry.getEntityMeta(cleanedClass);
 
-        // 서브쿼리 전용 바인더 생성 및 실행
-        SqlMapperBinder subBinder = new SqlMapperBinder();
+
         // 🚀 여기서 this.subStatements를 사용합니다!
         String subQuerySql = subBinder.generateSqlFromStatements(this.subStatements, subMeta != null ? subMeta : mainEntityMeta);
 

@@ -1,9 +1,8 @@
-package mq_mapper.domain.policy;
+package mq_repository.domain;
 
 import mq_mapper.domain.vo.EntityMeta;
 
 import java.util.*;
-
 /**
  * SQL 생성 한 사이클 동안 유지되는 빌드 컨텍스트.
  *
@@ -88,13 +87,17 @@ public class BuildContext {
     public String getOffset()        { return offset; }
     public boolean isRequiresPrefix(){ return requiresPrefix; }
 
-    public Set<String>  getTables()     { return Collections.unmodifiableSet(tables); }
-    public List<String> getJoins()      { return Collections.unmodifiableList(joins); }
-    public List<String> getWheres()     { return Collections.unmodifiableList(wheres); }
-    public List<String> getSets()       { return Collections.unmodifiableList(sets); }
-    public List<String> getInsertCols() { return Collections.unmodifiableList(insertCols); }
-    public List<String> getInsertVals() { return Collections.unmodifiableList(insertVals); }
-    public List<String> getGroupBys()   { return Collections.unmodifiableList(groupBys); }
-    public List<String> getOrderBys()   { return Collections.unmodifiableList(orderBys); }
-    public Map<String, String> getTableAliases() { return Collections.unmodifiableMap(tableAliases); }
+    public Set<String>  getTables()     { return tables; }
+    public List<String> getJoins()      { return joins; }
+    public List<String> getWheres()     { return wheres; }
+    public List<String> getSets()       { return sets; }
+    public List<String> getInsertCols() { return insertCols; }
+    public List<String> getInsertVals() { return insertVals; }
+    public List<String> getGroupBys()   { return groupBys; }
+    public List<String> getOrderBys()   { return orderBys; }
+    /**
+     * 기존 SqlNode 구현체들의 직접 put() 호출과의 호환성을 위해 뮤터블 맵을 반환합니다.
+     * 신규 코드에서는 {@link #registerAlias(String, String)}를 사용하세요.
+     */
+    public Map<String, String> getTableAliases() { return tableAliases; }
 }

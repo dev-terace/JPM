@@ -4,6 +4,7 @@ package utils;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.Trees;
+import mq_mapper.infra.repo.Pair;
 
 import javax.lang.model.element.VariableElement;
 import java.util.ArrayList;
@@ -11,11 +12,21 @@ import java.util.List;
 
 public class MParserUtilsV2 {
 
-    public static class Pair {
+    public static class Pair extends mq_mapper.infra.repo.Pair {
         public String key;
         public String value;
         public Pair(String key, String value) { this.key = key; this.value = value; }
         @Override public String toString() { return key + "=" + value; }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
+        }
     }
 
     /**

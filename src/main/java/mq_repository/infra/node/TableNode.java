@@ -1,11 +1,12 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
 import config.AppConfig;
 import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.repo.EntityMetaRegistryImpl;
-import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 import mq_mapper.domain.vo.EntityMeta;
+import utils.LogPrinter;
 
 import java.util.List;
 
@@ -20,11 +21,13 @@ public class TableNode implements SqlNode {
     private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         String inputName = args.get(0); // "UsersInfoEntity" 또는 "users_info"
         String alias = args.size() > 1 ? args.get(1) : null;
 
         // 🚀 1. 클래스명으로 Meta를 찾아서 실제 테이블명 추출
+
+        LogPrinter.info("[TableNode] alias=" + inputName);
         EntityMeta meta = entityMetaRegistry.getEntityMeta(inputName);
         String finalTableName = (meta != null) ? meta.getTableName() : inputName;
 
@@ -32,17 +35,17 @@ public class TableNode implements SqlNode {
         String tableExpr = finalTableName;
         if (alias != null) {
             tableExpr += " " + alias;
-            ctx.tableAliases.put(alias, finalTableName);
+            ctx.getTableAliases().put(alias, finalTableName);
         } else {
-            ctx.tableAliases.put(finalTableName, finalTableName);
+            ctx.getTableAliases().put(finalTableName, finalTableName);
         }
 
         // 3. Set에 추가 (중복 방지)
-        ctx.tables.add(tableExpr);
+        ctx.getTables().add(tableExpr);
 
         // 4. 접두어 설정
-        if (ctx.tablePrefix == null || ctx.tablePrefix.isEmpty()) {
-            ctx.tablePrefix = alias != null ? alias : finalTableName;
+        if (ctx.getTablePrefix() == null || ctx.getTablePrefix().isEmpty()) {
+            ctx.setTablePrefix(alias != null ? alias : finalTableName);
         }
 
 
@@ -50,7 +53,7 @@ public class TableNode implements SqlNode {
     }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
+    public String toSql(BuildContext ctx) {
         return "";
     }
 }

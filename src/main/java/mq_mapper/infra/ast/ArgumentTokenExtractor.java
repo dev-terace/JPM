@@ -2,6 +2,8 @@ package mq_mapper.infra.ast;
 
 import com.sun.source.tree.*;
 import mq_mapper.domain.vo.MethodMeta;
+import mq_mapper.infra.ast.utils.ArgValidatorUtil;
+import mq_mapper.infra.ast.utils.MethodTreeUtil;
 import utils.LogPrinter;
 
 import java.util.ArrayList;
@@ -29,7 +31,7 @@ public class ArgumentTokenExtractor {
             boolean isCondition = CONDITION_COMMANDS.contains(command);
 
             List<? extends ExpressionTree> arguments = call.getArguments();
-            ArgValidator validator = new ArgValidator();
+            ArgValidatorUtil validator = new ArgValidatorUtil();
 
             for (int i = 0; i < arguments.size(); i++) {
                 ExpressionTree arg = arguments.get(i);

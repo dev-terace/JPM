@@ -1,6 +1,7 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
-import mq_mapper.infra.SqlMapperBinder;
+
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 
 public class LimitOffsetNode implements SqlNode {
@@ -13,11 +14,11 @@ public class LimitOffsetNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         // 키워드 없이 값만 컨텍스트에 저장
-        if ("LIMIT".equals(type)) ctx.limit = value;
-        if ("OFFSET".equals(type)) ctx.offset = value;
+        if ("LIMIT".equals(type)) ctx.setLimit(value);
+        if ("OFFSET".equals(type)) ctx.setOffset(value);
     }
 
-    @Override public String toSql(SqlMapperBinder.BuildContext ctx) { return ""; }
+    @Override public String toSql(BuildContext ctx) { return ""; }
 }

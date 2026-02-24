@@ -6,6 +6,7 @@ import m_ddl_generator.parser.MetadataLoader;
 import m_ddl_generator.writer.DdlWriter;
 
 import utils.JpmOptionsLoader;
+import utils.LogPrinter;
 
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -55,7 +56,10 @@ public class AutoDDLGenerator {
     public void generate() {
         try {
             // 1-1. 메타데이터 로드
+
             List<TableMetadata> tables = loader.load(null);
+
+            LogPrinter.info("===========222========================" + tables);
             if (tables.isEmpty()) return;
             // 1-2. SQL 생성
             String finalSql = buildSql(tables);

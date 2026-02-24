@@ -2,8 +2,12 @@ package mq_mapper.infra.ast;
 
 import com.sun.source.tree.*;
 import mq_mapper.domain.vo.EntityMeta;
+import mq_mapper.infra.ast.utils.MethodRefUtil;
+import mq_mapper.infra.ast.utils.MethodTreeUtil;
 import mq_mapper.infra.repo.EntityMetaRegistry;
 import utils.LogPrinter;
+
+import java.util.List;
 
 /**
  * ExpressionTree 노드를 SQL 토큰(문자열)으로 변환합니다.

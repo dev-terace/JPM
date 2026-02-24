@@ -179,18 +179,18 @@ public abstract class JpmAbstractQuerySegment<T> {
 
 
     // [수정] 양쪽 모두 메서드 참조 지원 (N중 조인을 위해 <L, R> 분리)
-    public <R, LF, LFR, RF, RFR> void innerJoin(Class<R> targetTable, MFieldRef<LF, LFR> left, MFieldRef<RF, RFR> right) {}
-    public <R, LF, LFR, RF, RFR> void leftJoin(Class<R> targetTable, MFieldRef<LF, LFR> left, MFieldRef<RF, RFR> right) {}
+    public <R,  LFR, RF, RFR> void innerJoin(Class<R> targetTable, MFieldRef<R, LFR> left, MFieldRef<RF, RFR> right) {}
+    public <R, LFR, RF, RFR> void leftJoin(Class<R> targetTable, MFieldRef<R, LFR> left, MFieldRef<RF, RFR> right) {}
 
 
-    public <L, R, C> void innerJoin(Class<R> targetTable, AliasedField<?, ?> left, AliasedField<?, ?> right) {}
-    public <L, R, C> void leftJoin(Class<R> targetTable, AliasedField<?, ?> left, AliasedField<?, ?> right) {}
+    public <R> void innerJoin(Class<R> targetTable, AliasedField<R, ?> left, AliasedField<?, ?> right) {}
+    public <R> void leftJoin(Class<R> targetTable, AliasedField<R, ?> left, AliasedField<?, ?> right) {}
 
 
-    public <R, LF, LFR, RF, RFR> void innerJoinGroup(Class<R> targetTable, MFieldRef<LF, LFR> left, MFieldRef<RF, RFR> right) {}
-    public <R, LF, LFR, RF, RFR> void leftJoinGroup(Class<R> targetTable, MFieldRef<LF, LFR> left, MFieldRef<RF, RFR> right) {}
-    public <L, R, C> void innerJoinGroup(Class<R> targetTable, AliasedField<?, ?> left, AliasedField<?, ?> right) {}
-    public <L, R, C> void leftJoinGroup(Class<R> targetTable, AliasedField<?, ?> left, AliasedField<?, ?> right) {}
+    public <R,  LFR, RF, RFR> void innerJoinGroup(Class<R> targetTable, MFieldRef<R, LFR> left, MFieldRef<RF, RFR> right) {}
+    public <R,  LFR, RF, RFR> void leftJoinGroup(Class<R> targetTable, MFieldRef<R, LFR> left, MFieldRef<RF, RFR> right) {}
+    public <R> void innerJoinGroup(Class<R> targetTable, AliasedField<R, ?> left, AliasedField<?, ?> right) {}
+    public <R> void leftJoinGroup(Class<R> targetTable, AliasedField<R, ?> left, AliasedField<?, ?> right) {}
 
 
 

@@ -1,10 +1,11 @@
-package mq_repository.infra;
+package mq_repository.infra.node;
 
 import config.AppConfig;
+import mq_mapper.domain.policy.SqlMapperBinder;
 import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.repo.EntityMetaRegistryImpl;
-import mq_mapper.infra.SqlMapperBinder;
+import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
+import mq_repository.domain.BuildContext;
 import mq_repository.domain.SqlNode;
 import mq_mapper.domain.vo.EntityMeta;
 
@@ -16,6 +17,7 @@ public class ExistsNode implements SqlNode {
     private final EntityMeta entityMeta;
 
     private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
+    private static final SqlMapperBinder subBinder = AppConfig.getSqlMapperBinder();
 
     public ExistsNode(String cmd, List<DslStatement> subStatements, EntityMeta entityMeta) {
         this.cmd = cmd;
@@ -24,7 +26,7 @@ public class ExistsNode implements SqlNode {
     }
 
     @Override
-    public String toSql(SqlMapperBinder.BuildContext ctx) {
+    public String toSql(BuildContext ctx) {
         if (subStatements == null || subStatements.isEmpty()) {
             return (cmd.contains("Not") ? "NOT EXISTS" : "EXISTS") + " (SELECT 1)";
         }
@@ -45,7 +47,7 @@ public class ExistsNode implements SqlNode {
         }
 
         // 서브쿼리용 독립 컨텍스트 (부모 별칭 맵 상속)
-        SqlMapperBinder subBinder = new SqlMapperBinder();
+
         String subSql = subBinder.generateSqlFromStatements(subStatements, subMeta);
 
         String operator = cmd.contains("Not") ? "NOT EXISTS" : "EXISTS";
@@ -53,7 +55,7 @@ public class ExistsNode implements SqlNode {
     }
 
     @Override
-    public void apply(SqlMapperBinder.BuildContext ctx) {
+    public void apply(BuildContext ctx) {
         // WhereClauseNode 내부에서 toSql을 호출해 사용할 예정
     }
 

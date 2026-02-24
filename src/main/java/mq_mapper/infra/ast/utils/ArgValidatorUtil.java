@@ -1,4 +1,4 @@
-package mq_mapper.infra.ast;
+package mq_mapper.infra.ast.utils;
 
 import config.AppConfig;
 import mq_mapper.domain.vo.EntityMeta;
@@ -8,7 +8,7 @@ import utils.LogPrinter;
 import java.util.Arrays;
 
 
-public class ArgValidator {
+public class ArgValidatorUtil {
 
     private String[] firstArgInfoTemp = null;
     private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
