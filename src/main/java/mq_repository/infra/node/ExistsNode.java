@@ -1,7 +1,9 @@
 package mq_repository.infra;
 
+import config.AppConfig;
 import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
 import mq_mapper.domain.vo.EntityMeta;
@@ -12,6 +14,8 @@ public class ExistsNode implements SqlNode {
     private final String cmd; // "whereExistsGroup" 등
     private final List<DslStatement> subStatements;
     private final EntityMeta entityMeta;
+
+    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
     public ExistsNode(String cmd, List<DslStatement> subStatements, EntityMeta entityMeta) {
         this.cmd = cmd;
@@ -32,7 +36,7 @@ public class ExistsNode implements SqlNode {
                 String rawClass = stmt.getArgs().get(0)
                         .replace(".class", "")
                         .replaceAll("^class .*\\.", ""); // 패키지명 제거
-                EntityMeta found = EntityMetaRegistry.getEntityMeta(rawClass);
+                EntityMeta found = entityMetaRegistry.getEntityMeta(rawClass);
                 if (found != null) {
                     subMeta = found;
                     break;

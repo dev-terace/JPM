@@ -1,4 +1,4 @@
-package mq_mapper.infra.utils;
+package mq_mapper.infra.ast;
 
 import annotation.MqAssociation;
 import annotation.MqCollection;
@@ -8,14 +8,19 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import config.AppConfig;
 import mq_mapper.domain.vo.*;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Field;
 import java.util.*;
 
+// 테스트 코드용
+
+@Deprecated
 public class MqRepoParser {
 
     private static final Set<String> DSL_KEYWORDS = new HashSet<>(Arrays.asList(
@@ -34,6 +39,8 @@ public class MqRepoParser {
             "whereNotExistsGroup"
 
     ));
+
+    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
     public static Map<String, RepoMeta> parseFile(String filePath) {
         Map<String, RepoMeta> repoMap = new LinkedHashMap<>();
@@ -137,7 +144,7 @@ public class MqRepoParser {
 
     private static void inlineSegmentMethod(String repoPath, String segmentMethodName, MethodMeta methodMeta, List<String> passedArgs) {
         // 1. Registry에서 이 레포지토리에 연결된 세그먼트 파일 경로를 가져옴
-        String segmentPath = EntityMetaRegistry.getSegmentPath(repoPath);
+        String segmentPath = entityMetaRegistry.getSegmentPath(repoPath, segmentMethodName);
 
         if (segmentPath == null) {
             System.err.println("경고: " + repoPath + "에 연결된 세그먼트 경로가 없습니다.");
@@ -413,7 +420,7 @@ public class MqRepoParser {
         }
 
         // 단순 값 (숫자, TRUE/FALSE 등) -> ["STRING", raw값]
-        return null;
+        throw new RuntimeException("함수형 값이 안들어왔습니다!!!");
     }
 
     private static String[] resolveLiteralType(String cleaned) {
@@ -457,12 +464,7 @@ public class MqRepoParser {
 
         // 🔥 2️⃣ :: 기준으로 메서드명 추출
         System.out.println("cleaned: " + cleaned);
-/*        if (cleaned.contains("::")) {
-            String[] parts = cleaned.split("::");
-            String methodName = parts[1].trim();
-            String className = parts[0].trim();
-            return convertGetterToField(className, methodName);
-        }*/
+
 
 
 
@@ -531,10 +533,10 @@ public class MqRepoParser {
 
         try {
             // EntityMetaRegistry에서 실제 클래스 가져오기
-            EntityMeta meta = EntityMetaRegistry.getEntityMeta(classNamePart);
+            EntityMeta meta = entityMetaRegistry.getEntityMeta(classNamePart);
             if (meta == null) return MapJoinMeta.MappingType.AUTO;
 
-            Class<?> entityClass = EntityMetaRegistry.getEntityClass(classNamePart);
+            Class<?> entityClass = entityMetaRegistry.getEntityClass(classNamePart);
             Field field = entityClass.getDeclaredField(fieldName);
 
             if (field.isAnnotationPresent(MqCollection.class)) {
@@ -562,7 +564,7 @@ public class MqRepoParser {
     private static void validateLiteralType(String[] firstArgInfo, Expression lastArg) {
 
 
-        String lastArgFieldType = null;
+         String lastArgFieldType = null;
         if (lastArg.isStringLiteralExpr())       lastArgFieldType = "STRING";
         else if (lastArg.isBooleanLiteralExpr()) lastArgFieldType = "BOOLEAN";
         else if (lastArg.isIntegerLiteralExpr()) lastArgFieldType = "INTEGER";
@@ -572,15 +574,20 @@ public class MqRepoParser {
 
         //무조건 MFieldType만 검증 가능
         String firstArgEntityName = firstArgInfo[0];
+
+
         String firstArgFieldName = firstArgInfo[1];
 
-        EntityMeta entityMeta= EntityMetaRegistry.getEntityMeta(firstArgEntityName);
+        System.out.println("firestArgFieldName : " + firstArgFieldName);
+
+
+        EntityMeta entityMeta= entityMetaRegistry.getEntityMeta(firstArgEntityName);
 
 
         if(entityMeta == null) {System.err.println("Invalid entity name: " + firstArgEntityName); return;}
 
         String firstArgMFieldType = entityMeta.getFieldType(firstArgFieldName);
-
+        System.out.println("firstArgMFieldType: " + firstArgMFieldType);
         String firstArgFieldType = "";
 
         switch (Objects.requireNonNull(firstArgMFieldType).toUpperCase()) {

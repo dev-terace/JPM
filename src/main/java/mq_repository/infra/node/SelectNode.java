@@ -1,6 +1,8 @@
 package mq_repository.infra;
 
+import config.AppConfig;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
 import mq_mapper.domain.vo.EntityMeta;
@@ -9,6 +11,7 @@ import java.util.List;
 
 public class SelectNode implements SqlNode {
     private final List<String> columns;
+    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
     public SelectNode(List<String> columns) {
         this.columns = columns;
@@ -59,8 +62,8 @@ public class SelectNode implements SqlNode {
 
         if (!isPrefix) return fieldName;
 
-        EntityMeta entityMeta = EntityMetaRegistry.getEntityMeta(className);
-        String tableName = EntityMetaRegistry.getTable(className);
+        EntityMeta entityMeta = entityMetaRegistry.getEntityMeta(className);
+        String tableName = entityMetaRegistry.getTable(className);
         if (entityMeta == null || tableName == null) return fieldName;
 
         String colName = entityMeta.getColumn(fieldName);

@@ -1,10 +1,15 @@
 package mq_repository.infra;
 
+import config.AppConfig;
 import mq_mapper.domain.vo.EntityMeta;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 
 public class ColumnResolver {
+
+    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
+
 
     public static String resolve(String colStr, SqlMapperBinder.BuildContext ctx) {
 
@@ -36,8 +41,8 @@ public class ColumnResolver {
         }
 
 
-        EntityMeta entityMeta = EntityMetaRegistry.getEntityMeta(className);
-        String tableName = EntityMetaRegistry.getTable(className);
+        EntityMeta entityMeta = entityMetaRegistry.getEntityMeta(className);
+        String tableName = entityMetaRegistry.getTable(className);
         if (entityMeta == null || tableName == null) return fieldName;
 
         String colName = entityMeta.getColumn(fieldName);

@@ -4,12 +4,7 @@ package mq_repository.infra;
 import mq_repository.domain.SqlNode;
 
 
-
-import mq_mapper.infra.repo.EntityMetaRegistry;
 import mq_mapper.infra.SqlMapperBinder;
-
-import mq_mapper.domain.vo.EntityMeta;
-
 
 
 public class ConditionNode implements SqlNode {
@@ -78,39 +73,5 @@ public class ConditionNode implements SqlNode {
         return s.replace("'", "''");
     }
 
-/*    private String getFieldType(String column, SqlMapperBinder.BuildContext ctx) {
-        // "users_info.id" → "id" 추출
-        String fieldName = column.contains(".") ? column.split("\\.")[1] : column;
-        String tableName = column.contains(".")
-                ? ctx.tableAliases.getOrDefault(column.split("\\.")[0], column.split("\\.")[0])
-                : ctx.tablePrefix;
 
-        EntityMeta meta = EntityMetaRegistry.getEntityMeta(tableName);
-        if (meta == null) meta = EntityMetaRegistry.getByTableName(tableName);
-        if (meta != null) return meta.getFieldType(fieldName);
-        return null;
-    }
-
-
-
-    private String resolveArgToColumn(String arg, SqlMapperBinder.BuildContext ctx) {
-        String[] parts = arg.split("::");
-        String entityName = parts[0].trim();
-        String fieldName = extractFieldName(parts[1].trim());
-
-        EntityMeta meta = EntityMetaRegistry.getEntityMeta(entityName);
-        if (meta != null) {
-            String dbCol = meta.getColumn(fieldName);
-            String alias = ctx.tableAliases.getOrDefault(meta.getTableName(), meta.getTableName());
-            return alias + "." + (dbCol != null ? dbCol : fieldName);
-        }
-        return fieldName;
-    }*/
-
-/*    private String extractFieldName(String methodName) {
-        if (methodName.startsWith("get") && methodName.length() > 3) {
-            return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-        }
-        return methodName;
-    }*/
 }

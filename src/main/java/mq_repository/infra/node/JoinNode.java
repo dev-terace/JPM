@@ -1,6 +1,8 @@
 package mq_repository.infra;
 
+import config.AppConfig;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 import mq_mapper.infra.SqlMapperBinder;
 
 import mq_repository.domain.SqlNode;
@@ -14,6 +16,9 @@ public class JoinNode implements SqlNode {
     private final String leftCol;
     private final String rightCol;
 
+
+    private final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
+
     // 1. 생성자에서는 넘어온 값들을 멤버 변수로 세팅만 해줍니다.
     public JoinNode(String cmd, List<String> args) {
         this.joinType = "leftJoin".equals(cmd) ? "LEFT JOIN" : "INNER JOIN";
@@ -25,14 +30,8 @@ public class JoinNode implements SqlNode {
     @Override
     public void apply(SqlMapperBinder.BuildContext ctx) {
         String cleanedClass = cleanClassName(this.rawClass);
-        EntityMeta meta = EntityMetaRegistry.getEntityMeta(cleanedClass);
-        String actualTable = (meta != null) ? EntityMetaRegistry.getTable(meta.getTableName()) : cleanedClass;
-
-
-
-        // 🚀 leftCol에 접두어가 없으면 메인 테이블(tablePrefix) 접두어 추가
-
-
+        EntityMeta meta = entityMetaRegistry.getEntityMeta(cleanedClass);
+        String actualTable = (meta != null) ? entityMetaRegistry.getTable(meta.getTableName()) : cleanedClass;
 
         String resolvedLeftCol = ColumnResolver.resolve(leftCol, ctx);
         String resolvedRightCol = ColumnResolver.resolve(rightCol, ctx);
@@ -46,24 +45,19 @@ public class JoinNode implements SqlNode {
                 : prefix.contains(".") ? prefix.split("\\.")[1] : prefix;
 
 
-/*        String rightColTable = rightCol.split("::")[0].equals(meta.getTableName()) ? rightCol.split("::")[0] :
-                                                                                    rightCol.split("\\.")[1].split("::")[0];*/
+        String alias = "";
 
-
-
-        String alias;
-        String joinStr;
 
         System.out.print("[joinNode] leftColTable :"  + leftColTable);
         if(leftColTable.equals(meta.getTableName()))
         {
-            alias = resolvedLeftCol.split("\\.")[0];
-            joinStr = this.joinType + " " + actualTable +" "+ alias + " ON " + resolvedLeftCol + " = " + resolvedRightCol;
+            if(prefix.contains(".")) alias = resolvedLeftCol.split("\\.")[0] + " ";
+
         }else{
             throw new RuntimeException("1번째 인자 값과 2번째 인자 값이 같도록 설정 해주세요.");
         }
 
-
+        String joinStr = this.joinType + " " + actualTable +" "+ alias + "ON " + resolvedLeftCol + " = " + resolvedRightCol;
 
 
         ctx.joins.add(joinStr);
@@ -71,24 +65,6 @@ public class JoinNode implements SqlNode {
 
     @Override
     public String toSql(SqlMapperBinder.BuildContext ctx) {
-       /* String cleanedClass = cleanClassName(this.rawClass);
-        EntityMeta meta = EntityMetaRegistry.getEntityMeta(cleanedClass);
-        String actualTable = (meta != null) ? meta.getTableName() : cleanedClass;
-
-        String joinAlias = ctx.tableAliases.getOrDefault(actualTable, actualTable);
-
-        // 🚀 leftCol에 접두어가 없으면 메인 테이블 접두어 추가
-        String leftColWithPrefix = this.leftCol.contains(".")
-                ? this.leftCol
-                : ctx.tablePrefix + "." + this.leftCol;
-
-        String resolvedLeftCol = forceResolveColumn(leftColWithPrefix, ctx);
-        String resolvedRightCol = forceResolveColumn(correctRightCol(this.rightCol, joinAlias), ctx);
-
-        String aliasSuffix = joinAlias.equals(actualTable) ? "" : " AS " + joinAlias;
-
-        return String.format("%s %s%s ON %s = %s",
-                this.joinType, actualTable, aliasSuffix, resolvedLeftCol, resolvedRightCol);*/
 
         return "";
     }
@@ -112,7 +88,7 @@ public class JoinNode implements SqlNode {
         // Alias를 통해 실제 테이블명 획득
         String tableName = ctx.tableAliases.get(alias);
         if (tableName != null) {
-            EntityMeta meta = EntityMetaRegistry.getEntityMeta(tableName);
+            EntityMeta meta = entityMetaRegistry.getEntityMeta(tableName);
             if (meta != null) {
                 String dbCol = meta.getColumn(fieldName);
                 if (dbCol != null) {

@@ -2,8 +2,10 @@ package mq_repository.infra;
 
 
 
+import config.AppConfig;
 import mq_mapper.domain.vo.DslStatement;
 import mq_mapper.infra.repo.EntityMetaRegistry;
+import mq_mapper.infra.repo.EntityMetaRegistryImpl;
 import mq_mapper.infra.SqlMapperBinder;
 import mq_repository.domain.SqlNode;
 
@@ -18,6 +20,9 @@ public class JoinGroupNode implements SqlNode {
     private final String rightCol;      // 예: "item_summary.order_id"
     private final List<DslStatement> subStatements; // 👈 이 변수명으로 통일
     private final EntityMeta mainEntityMeta;
+
+
+    private static final EntityMetaRegistry entityMetaRegistry = AppConfig.getEntityMetaRegistry();
 
     public JoinGroupNode(String cmd, List<String> args, List<DslStatement> subStatements, EntityMeta entityMeta) {
         this.joinType = cmd.startsWith("left") ? "LEFT JOIN" : "INNER JOIN";
@@ -50,7 +55,7 @@ public class JoinGroupNode implements SqlNode {
         // 2. 서브쿼리용 메타데이터 결정
         // Join 대상인 OrderItemEntity.class의 메타를 가져와야 서브쿼리 내부 컬럼명이 정확히 변환됩니다.
         String cleanedClass = targetClass.replace(".class", "").replace("class ", "");
-        EntityMeta subMeta = EntityMetaRegistry.getEntityMeta(cleanedClass);
+        EntityMeta subMeta = entityMetaRegistry.getEntityMeta(cleanedClass);
 
         // 서브쿼리 전용 바인더 생성 및 실행
         SqlMapperBinder subBinder = new SqlMapperBinder();
