@@ -1,0 +1,155 @@
+package m_entity.generator.domain.policy.ddl_script_builder;
+
+import m_entity.client.AutoDDLPolicy;
+import com.github.javaparser.utils.Log;
+import config.AppConfig;
+import m_entity.dialect.SqlDialect;
+
+import m_entity.generator.domain.vo.DDLColumnMetadata;
+import m_entity.generator.domain.vo.DDLTableMetadata;
+
+
+import java.util.List;
+import java.util.Map;
+
+public class DDLScriptBuilder {
+
+    private final String policy;
+
+    private final SqlDialect dialect = AppConfig.getSqlDialectImpl();
+    // 생성자: Dialect와 옵션을 받아서 초기화
+
+    public DDLScriptBuilder(Map<String, String> options) {
+
+        this.policy = options.getOrDefault("auto", "NONE");
+
+    }
+
+    /**
+     * [Public] 전체 DDL 스크립트 생성 (Main Method)
+     */
+    public String build(List<DDLTableMetadata> tables) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<![CDATA[\n");
+        // 1. 테이블 삭제 및 생성 (DROP & CREATE)
+        buildDropAndCreate(sb, tables);
+        // 2. 컬럼 추가 (ALTER - UPDATE 정책일 때만)
+        buildAddColumns(sb, tables);
+        Log.info(tables.toString());
+        // 3. 외래키 제약조건 (FK)
+        new DDLForeignKeyGenerator(dialect, tables).generate(sb);
+        // 4. 인덱스 생성 (INDEX)
+        buildIndexes(sb, tables);
+        sb.append("]]>");
+
+        return sb.toString();
+    }
+
+    // ---------------------------------------------------------
+    // Private Helper Methods (로직 분리)
+    // ---------------------------------------------------------
+
+    /**
+     * Step 1. 테이블 DROP 및 CREATE
+     */
+
+
+    private void buildDropAndCreate(StringBuilder sb, List<DDLTableMetadata> tables) {
+        sb.append("\t/* --- 1. TABLES (DROP & CREATE) --- */\n");
+
+        boolean shouldDrop = isDropPolicy();
+
+        for (DDLTableMetadata table : tables) {
+            // 1-1. DROP (정책이 맞을 경우)
+            if (shouldDrop) {
+                List<String> dropSqls = dialect.createDropTableSql(table);
+                for (String sql : dropSqls) {
+                    appendStatement(sb, sql);
+                }
+            }
+
+            // 1-2. CREATE (IF NOT EXISTS 포함됨)
+            String createSql = dialect.createTableDefinitionSql(table);
+            appendStatement(sb, createSql);
+            sb.append("\n");
+        }
+    }
+
+    /**
+     * Step 2. 컬럼 추가 (ALTER) - 테이블을 새로 만들지 않을 때만 실행
+     */
+    private void buildAddColumns(StringBuilder sb, List<DDLTableMetadata> tables) {
+        // DROP 정책이면 이미 CREATE에서 최신 컬럼이 만들어지므로 ALTER 불필요
+        if (isDropPolicy()) {
+            return;
+        }
+
+        sb.append("\t/* --- 2. UPDATE COLUMNS (If Not Exists) --- */\n");
+
+        for (DDLTableMetadata table : tables) {
+            for (DDLColumnMetadata col : table.getColumns()) {
+                // Dialect에게 위임 (PG: IF NOT EXISTS, MySQL: Procedure)
+                String alterSql = dialect.createAddColumnIfNotExistsSql(table, col);
+
+                // 유효한 SQL이 있을 경우에만 추가
+                if (alterSql != null && !alterSql.trim().isEmpty()) {
+                    appendStatement(sb, alterSql);
+                }
+            }
+        }
+        sb.append("\n");
+    }
+
+
+
+
+    /**
+     * Step 4. 인덱스 생성
+     */
+    private void buildIndexes(StringBuilder sb, List<DDLTableMetadata> tables) {
+        sb.append("\t/* --- 4. INDEXES --- */\n");
+
+
+
+
+        for (DDLTableMetadata table : tables) {
+
+
+            List<String> indexSqls = dialect.createIndexSql(table);
+            for (String sql : indexSqls) {
+                appendStatement(sb, sql);
+            }
+        }
+
+    }
+
+
+
+
+    // ---------------------------------------------------------
+    // Utility Methods
+    // ---------------------------------------------------------
+
+    /**
+     * SQL 문 뒤에 세미콜론(;)을 안전하게 붙여서 StringBuilder에 추가
+     */
+    private void appendStatement(StringBuilder sb, String sql) {
+        if (sql == null || sql.trim().isEmpty()) return;
+
+        sb.append("\t").append(sql.trim());
+
+        // 끝에 ;가 없으면 붙여줌 (MySQL 프로시저 등은 이미 있을 수 있음)
+        if (!sql.trim().endsWith(";")) {
+            sb.append(";");
+        }
+        sb.append("\n");
+    }
+
+    /**
+     * 현재 정책이 테이블 DROP을 포함하는지 확인
+     */
+    private boolean isDropPolicy() {
+        return AutoDDLPolicy.DROP.name().equals(policy) ||
+                AutoDDLPolicy.DROP_N_CREATE_EXE.name().equals(policy);
+    }
+}

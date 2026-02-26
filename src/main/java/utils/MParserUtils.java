@@ -14,7 +14,7 @@ public class MParserUtils {
     // 이제 타겟은 오직 하나입니다.
     private static final String TARGET_TYPE = "MField";
 
-    public static class Pair extends mq_mapper.infra.repo.Pair {
+    public static class Pair extends utils.Pair {
         public String key;
         public String value;
         public Pair(String key, String value) { this.key = key; this.value = value; }

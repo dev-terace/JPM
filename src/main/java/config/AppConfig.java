@@ -1,13 +1,16 @@
 package config;
 
-import m_ddl_generator.dialect.MySqlDialect;
-import m_ddl_generator.dialect.PostgreSqlDialect;
-import m_ddl_generator.dialect.SqlDialect;
-import mq_mapper.domain.policy.SqlMapperBinder;
-import mq_mapper.domain.policy.SqlMapperBinderImplV2;
-import mq_mapper.domain.policy.prev.SqlMapperBinderImpl;
-import mq_mapper.infra.repo.EntityMetaRegistry;
-import mq_mapper.infra.repo.EntityMetaRegistryImpl;
+import exception.cache.domain.SourceLocationCache;
+import exception.cache.infra.SourceLocationCacheImpl;
+import m_entity.dialect.MySqlDialect;
+import m_entity.dialect.PostgreSqlDialect;
+import m_entity.dialect.SqlDialect;
+import jpm_repository.parse.domain.policy.sql_mapper_binder.SqlMapperBinder;
+import jpm_repository.parse.domain.policy.sql_mapper_binder.SqlMapperBinderImplV2;
+import jpm_repository.parse.domain.cache.RepoMetaRegistry;
+import jpm_repository.parse.domain.cache.EntityRelationRegistry;
+import jpm_repository.parse.infra.RepoMetaRegistryImpl;
+import jpm_repository.parse.infra.RepoRelationRegistryImpl;
 
 import java.util.Map;
 
@@ -19,11 +22,16 @@ public class AppConfig {
 
     public static String MAPPER_NAME_SPACE = "dev.sj.jqm.mapper.";
 
-    public static final EntityMetaRegistry entityMetaRegistry = new EntityMetaRegistryImpl();
-    public static final SqlMapperBinder sqlMapperBinder = new SqlMapperBinderImplV2(entityMetaRegistry);
+    private static final EntityRelationRegistry entityRelationRegistry = new RepoRelationRegistryImpl();
+    private static final RepoMetaRegistry REPO_META_REGISTRY = new RepoMetaRegistryImpl();
+    private static final SqlMapperBinder sqlMapperBinder = new SqlMapperBinderImplV2(REPO_META_REGISTRY);
+    private static final SourceLocationCache sourceLocationCache = new SourceLocationCacheImpl();
 
 
 
+    public static SourceLocationCache getSourceLocationCache() {
+        return sourceLocationCache;
+    }
     public static void sqlDialectInit(Map<String, String> options) {
         if(options.get("dbType").equals("MYSQL") )
         {
@@ -35,8 +43,9 @@ public class AppConfig {
         }
     }
 
-    public static EntityMetaRegistry getEntityMetaRegistry() {
-        return entityMetaRegistry;
+    public static EntityRelationRegistry getEntityRelationRegistry() {return entityRelationRegistry;}
+    public static RepoMetaRegistry getEntityMetaRegistry() {
+        return REPO_META_REGISTRY;
     }
     public static SqlMapperBinder getSqlMapperBinder() {
         return sqlMapperBinder;

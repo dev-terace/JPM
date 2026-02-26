@@ -1,18 +1,18 @@
 
 
-import auto_ddl.AutoDDLPolicy;
+import m_entity.client.AutoDDLPolicy;
 import com.google.auto.service.AutoService;
 import config.AppConfig;
 
-import m_ddl_generator.generator.AutoDDLGenerator;
-import m_ddl_generator.generator.JpmExecutorSourceWriter;
+import m_entity.processor.MEntityAstProcessor;
+import m_entity.generator.domain.policy.my_batis_ddl_executor_source_write.JpmMyBatisXMLDDLExecutorSourceWriter;
 
-import m_ddl_generator.parser.AnnotationMetadataLoaderV2;
-import m_ddl_generator.parser.MetadataLoader;
-import m_ddl_generator.writer.DdlWriter;
-import m_ddl_generator.writer.MyBatisXmlWriter;
+import m_entity.parse.infra.ast.DDLMetaDataLoaderAstImplV2;
+import m_entity.parse.domain.ast.DDLMetaDataLoader;
+import m_entity.generator.domain.policy.writer.DDLWriter;
+import m_entity.generator.domain.policy.writer.MyBatisDDLXmlWriter;
 
-import mq_repository.infra.ast.AutoDMLGenerator;
+import jpm_repository.processor.AstJpmRepositoryProcessor;
 import utils.LogPrinter;
 
 
@@ -55,8 +55,7 @@ public class MDDLProcessor extends AbstractProcessor {
             } catch (IllegalArgumentException e) {
                 // 오타가 있거나 값이 이상하면 DISABLED 처리
                 policy = AutoDDLPolicy.DISABLED;
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
-                        "⚠️ [JPM] 알 수 없는 auto 모드입니다 ('" + autoStr + "'). DISABLED로 설정합니다.");
+                LogPrinter.warn("⚠️ [JPM] 알 수 없는 auto 모드입니다 ('" + autoStr + "'). DISABLED로 설정합니다.");
             }
 
 
@@ -75,33 +74,31 @@ public class MDDLProcessor extends AbstractProcessor {
 
 
             // 5. 컴포넌트 준비
-            MetadataLoader metadataLoader = new AnnotationMetadataLoaderV2(processingEnv, roundEnv);
+
 
             // DB 타입에 따른 방언 설정
             AppConfig.sqlDialectInit(options);
 
-            DdlWriter ddlWriter = new MyBatisXmlWriter(processingEnv.getFiler(), "m_ddl_generator.ddl.AutoDDL");
+
 
             // 6. Generator 생성 및 실행
-            new AutoDDLGenerator(
-                    metadataLoader,
-                    ddlWriter,
+            new MEntityAstProcessor(
+
                     processingEnv,
-                    new JpmExecutorSourceWriter(processingEnv),
+                    roundEnv,
                     options // 전체 옵션 전달 (url, username, password 포함됨)
             ).generate();
 
 
-            new AutoDMLGenerator(roundEnv, processingEnv).generate();
+            new AstJpmRepositoryProcessor(roundEnv, processingEnv).generate();
 
 
 
 
 
         } catch (Exception e) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                    "❌ [JPM] DDL 생성 중 오류 발생: " + e.getMessage());
 
+            throw e;
         }
 
         return true;
