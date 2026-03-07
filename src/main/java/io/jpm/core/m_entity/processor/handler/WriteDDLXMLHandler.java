@@ -1,5 +1,6 @@
 package io.jpm.core.m_entity.processor.handler;
 
+import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
 import io.jpm.config.ast.AstHandler;
@@ -19,15 +20,16 @@ import java.util.Map;
 public class WriteDDLXMLHandler extends AstHandler<DDLHandlerContext> {
     private final Map<String, String> options;
     private final DDLWriter writer;
-
+    private final ErrorTracker errorTracker;
 
 
 
 
     public WriteDDLXMLHandler(BuildTimeMetadataCache cache, GlobalRegistry globalRegistry, AstContext astContext) {
         super(cache, globalRegistry, astContext);
-        this.options = globalRegistry.getOptions();
+        this.options = globalRegistry.options();
         this.writer = new MyBatisDDLXmlWriter(astContext.getFiler(), "m_ddl_generator.ddl.AutoDDL");
+        this.errorTracker = globalRegistry.errorTracker();
     }
 
     @Override
@@ -36,7 +38,12 @@ public class WriteDDLXMLHandler extends AstHandler<DDLHandlerContext> {
 
         List<DDLTableMetadata> tables = handlerContext.getTables();
         if (tables.isEmpty()) return;
-        // 1-2. SQL 생성
+
+
+        String reportInfo = errorTracker.reportField();
+        if(reportInfo != null){throw new IllegalArgumentException(reportInfo);}
+
+
         String finalSql = buildSql(tables);
         // 1-3. XML 파일 기록
         writer.write(finalSql);

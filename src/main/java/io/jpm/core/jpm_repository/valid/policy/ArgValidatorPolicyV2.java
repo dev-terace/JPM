@@ -26,10 +26,10 @@ public class ArgValidatorPolicyV2 {
     private String[] firstArgInfoTemp = null;
     private String commandTemp;
 
-    public ArgValidatorPolicyV2(BuildTimeMetadataCache cache) {
+    public ArgValidatorPolicyV2(BuildTimeMetadataCache cache, ErrorTracker errorTracker) {
         this.repoMetaRegistry = cache.getRepoMetaRegistry();
         this.entityRelationRegistry = cache.getEntityRelationRegistry();
-        this.errorTracker = cache.getErrorTracker();
+        this.errorTracker = errorTracker;
     }
 
     // ==========================================
@@ -49,6 +49,8 @@ public class ArgValidatorPolicyV2 {
     // Public API (검증부)
     // ==========================================
     public ValueType validateArgIfMatched(int argIndex, String conditionValType) {
+
+        LogPrinter.info("conditionValType : " + conditionValType);
         if (!isValidateArgIfMatched(argIndex)) return null;
         if (shouldSkipValidation(conditionValType)) return null;
 

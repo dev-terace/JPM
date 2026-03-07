@@ -4,9 +4,11 @@ import io.jpm.common.exception.cache.domain.vo.ChainSourceLocation;
 import io.jpm.common.exception.cache.domain.vo.FieldSourceLocation;
 import io.jpm.common.exception.cache.domain.vo.MethodSourceLocation;
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
+import io.jpm.common.utils.LogPrinter;
 
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class SourceLocationCacheImpl implements SourceLocationCache {
 
@@ -22,27 +24,51 @@ public class SourceLocationCacheImpl implements SourceLocationCache {
 
     public ChainSourceLocation popChainSourceLocation(String className, String methodName, String chainMethodName) {
 
-        List<ChainSourceLocation> chainSourceLocations = chainLocationMap.get(className).get(methodName);
+        List<ChainSourceLocation> locations = chainLocationMap.get(className).get(methodName);
+        return popFromList(
+                locations,
+                loc -> loc.getChainMethodName().equals(chainMethodName),
+                String.format("ChainSourceLocation not found for %s.%s.%s", className, methodName, chainMethodName)
+        );
 
-        if (chainSourceLocations == null) return null;
 
-        // 1. Iterator를 사용해서 리스트를 순회합니다.
-        Iterator<ChainSourceLocation> it = chainSourceLocations.iterator();
 
-        while (it.hasNext()) {
-            ChainSourceLocation loc = it.next();
+    }
 
-            // 2. 조건에 맞는 요소를 찾으면
-            if (loc.getChainMethodName().equals(chainMethodName)) {
-                it.remove(); // ✅ 현재 가리키고 있는 바로 그 요소를 안전하게 삭제!
-                return loc;  // ✅ 찾은 값을 즉시 반환하고 종료
-            }
+
+    public FieldSourceLocation popFieldSourceLocation(String className, String fieldName) {
+        Map<String, FieldSourceLocation> innerMap = fieldLocationMap.get(className);
+        if (innerMap == null) return null;
+
+        // Map의 remove(key)는 삭제된 "값"을 반환합니다. 이게 곧 Pop입니다.
+        FieldSourceLocation loc = innerMap.remove(fieldName);
+
+        if (loc == null) {
+            throw new RuntimeException(String.format("FieldSourceLocation not found for %s.%s", className, fieldName));
         }
 
 
-        throw new RuntimeException("ChainSourceLocation not found for " + className + "." + methodName + "." + chainMethodName);
-
+        return loc;
     }
+
+
+
+    private <T> T popFromList(List<T> list, Predicate<T> filter, String errorMessage) {
+        if (list == null) return null;
+
+        Iterator<T> it = list.iterator();
+        while (it.hasNext()) {
+            T item = it.next();
+            if (filter.test(item)) {
+                it.remove(); // 찾으면 즉시 삭제
+                return item; // 삭제한 요소 반환
+            }
+        }
+
+        // 못 찾았을 경우 예외 처리 (혹은 null 반환으로 설계 가능)
+        throw new RuntimeException(errorMessage);
+    }
+
 
     public void registerFieldLocation(String entityName, String fieldName, FieldSourceLocation loc) {
         fieldLocationMap.computeIfAbsent(entityName, k -> new HashMap<>()).put(fieldName, loc);

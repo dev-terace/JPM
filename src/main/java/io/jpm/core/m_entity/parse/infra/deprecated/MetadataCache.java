@@ -2,7 +2,6 @@ package io.jpm.core.m_entity.parse.infra.deprecated;
 
 import io.jpm.api.MEntity;
 import io.jpm.api.MField;
-import io.jpm.core.m_entity.parse.deprecated.MObjectFactory;
 import io.jpm.common.utils.MParserUtils;
 import io.jpm.core.m_entity.parse.domain.vo.MEntityInfo;
 
@@ -55,7 +54,7 @@ public class MetadataCache {
 
         for (List<MParserUtils.Pair> ignored : rawData) {
             // 팩토리를 통해 MVariable 객체 생성
-            MField var = MObjectFactory.createMVariable(ignored, element);
+            MField var = null;/*MObjectFactory.createMVariable(ignored, element);*/
 
             variables.add(var);
 

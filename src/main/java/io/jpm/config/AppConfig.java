@@ -2,6 +2,7 @@ package io.jpm.config;
 
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
 import io.jpm.common.exception.cache.infra.SourceLocationCacheImpl;
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.m_entity.dialect.MySqlDialect;
 import io.jpm.core.m_entity.dialect.PostgreSqlDialect;
 import io.jpm.core.m_entity.dialect.SqlDialect;
@@ -35,6 +36,8 @@ public class AppConfig {
 
 
     public static void sqlDialectInit(Map<String, String> options) {
+
+
         if(options.get("dbType").equals("MYSQL") )
         {sqlDialect = new MySqlDialect();}
         else {sqlDialect = new PostgreSqlDialect();}

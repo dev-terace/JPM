@@ -12,6 +12,7 @@ import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstAr
 import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProcV2;
 
 import javax.lang.model.element.TypeElement;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ public class AstSegmentInlinerV2 {
                        String repoClassName, String fieldVarName, String segmentMethodName,
                        MethodMeta methodMeta, List<String> passedArgs) {
 
+
         String segmentTypeName = repoMetaRegistry.getSegmentPath(repoClassName, fieldVarName);
         if (segmentTypeName == null) return;
 
@@ -66,7 +68,15 @@ public class AstSegmentInlinerV2 {
         MapParamRegistry ctx = new MapParamRegistry();
         List<? extends VariableTree> params = methodTree.getParameters();
         for (int i = 0; i < params.size() && i < passedArgs.size(); i++) {
+
+
             String paramName = params.get(i).getName().toString();
+
+            if(!Arrays.asList("r", "b", "q").contains(paramName))
+            {
+                continue;
+            }
+
             ctx.bind(paramName, passedArgs.get(i));
             LogPrinter.info("[SegmentInliner] argContext 매핑: " + paramName + " → " + passedArgs.get(i));
         }

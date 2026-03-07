@@ -1,13 +1,16 @@
 package io.jpm.core.jpm_repository.parse.infra;
 
+import groovy.util.logging.Log;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
 import io.jpm.common.utils.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     // Key: EntityClassName (예: MEntity3), Value: FieldMetadata Map (Key: Java 필드명, Value: DB 컬럼명)
@@ -25,7 +28,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     // 클래스명 -> 테이블명 매핑 (선택 사항, 필요시 사용)
     private final Map<String, String> tableRegistry = new HashMap<>();
 
-   private final Map<String, String> columnToField = new HashMap<>();
+    private final Map<String, String> columnToField = new HashMap<>();
 
     public void addMapping(String fieldName, String columnName) {
         columnToField.put(columnName, fieldName); // 역방향 추가
@@ -40,6 +43,19 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
         return entityMeta.getFieldType(fieldName);
     }
 
+    public List<String> getSegmentVarNames(String entityName) {
+        // 1. 해당 entityName에 맞는 안쪽 Map을 가져옴
+        Map<String, String> innerMap = segmentPathMap.get(entityName);
+
+        // 2. 만약 해당 엔티티 정보가 아예 없거나 안쪽 Map이 비어있을 경우 로그 출력
+        if (innerMap == null || innerMap.isEmpty()) {
+            LogPrinter.info("[SEGMENT_NOT_FOUND] No variable names found for entity: " + entityName);
+            return new ArrayList<>(); // 빈 리스트 반환 (NullPointerException 방지)
+        }
+
+        // 3. 안쪽 Map의 모든 Key(변수명)를 List로 반환
+        return new ArrayList<>(innerMap.keySet());
+    }
 
 
     //condition 에서 체크, inner/left에서 체크
@@ -62,8 +78,6 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
         String tableName = getTable(entityName);
         EntityMeta entityMeta = new EntityMeta(tableName, this);
-
-
 
 
         for (List<T> fieldInfo : rawMeta) {
@@ -97,7 +111,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
                 entityMeta.addMapping(fieldName, columnName);
                 if (typeName != null) entityMeta.addTypeMapping(fieldName, typeName);
 
-                System.out.println("[register] tableName=" + tableName+", columnName=" + columnName + ", typeName=" + typeName);
+                System.out.println("[register] tableName=" + tableName + ", columnName=" + columnName + ", typeName=" + typeName);
 
 
             }
@@ -105,8 +119,6 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
         registry.put(entityName, entityMeta);
     }
-
-
 
 
     // --- (옵션) 테이블명 관련 유틸 ---
@@ -133,7 +145,6 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     }
 
 
-
     public void registerEntity(Class<?> entityClass) {
         // entityClass.getSimpleName() 은 "UserEntity" 와 같은 짧은 이름을 반환합니다.
         classMap.put(entityClass.getSimpleName(), entityClass);
@@ -142,10 +153,10 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
         // EntityMeta 객체 생성 및 저장 로직도 여기에 함께 구현...
     }
+
     public Class<?> getEntityClass(String entityName) {
         return classMap.get(entityName);
     }
-
 
 
     @Override
@@ -155,36 +166,52 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
     @Override
     public EntityMeta getEntityMeta(String entityName) {
-        if (entityName == null) {
-            throw new RuntimeException("getEntityMeta called with null/blank entityName");
-        }
+
 
         // 1️⃣ alias나 필드 포함된 경우 마지막 토큰만 추출
         // ex)
         // o1.orderEntity        -> orderEntity
         // o1.orderEntity.id     -> id (이건 방어용)
         // com.test.OrderEntity  -> OrderEntity
-        String normalized = entityName;
-        int lastDot = normalized.lastIndexOf('.');
-        if (lastDot != -1) {
-            normalized = normalized.substring(lastDot + 1);
+
+        String normalized = "";
+        try {
+
+
+            LogPrinter.info("[RepoMetaRegistry] entityName=" + entityName);
+
+            normalized = entityName;
+            int lastDot = normalized.lastIndexOf('.');
+            if (lastDot != -1) {
+                normalized = normalized.substring(lastDot + 1);
+            }
+
+            // 2️⃣ registry 직접 조회
+            EntityMeta meta = registry.get(normalized);
+            if (meta != null) return meta;
+
+            // 3️⃣ simpleClassName → alias 매핑 조회
+            String alias = entityAliasMap.get(normalized);
+            if (alias != null) {
+                EntityMeta aliasMeta = registry.get(alias);
+                if (aliasMeta != null) return aliasMeta;
+            }
+
+        } catch (Exception e) {
+            System.err.println("=== ERROR: " + e.getClass().getName() + ": " + e.getMessage());
+            for (StackTraceElement ste : e.getStackTrace()) {
+                System.err.println("  at " + ste);
+            }
+            throw new NullPointerException(
+                    "getEntityMeta not found for entityName=" + entityName +
+                            " (normalized=" + normalized + ")"
+            );
+
         }
+        return null;
 
-        // 2️⃣ registry 직접 조회
-        EntityMeta meta = registry.get(normalized);
-        if (meta != null) return meta;
-
-        // 3️⃣ simpleClassName → alias 매핑 조회
-        String alias = entityAliasMap.get(normalized);
-        if (alias != null) {
-            EntityMeta aliasMeta = registry.get(alias);
-            if (aliasMeta != null) return aliasMeta;
-        }
-
-        throw new RuntimeException(
-                "getEntityMeta not found for entityName=" + entityName +
-                        " (normalized=" + normalized + ")"
-        );
     }
+
+
 
 }

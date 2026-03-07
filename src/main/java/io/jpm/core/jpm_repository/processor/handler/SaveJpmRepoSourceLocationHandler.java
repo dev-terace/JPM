@@ -27,7 +27,7 @@ public class SaveJpmRepoSourceLocationHandler extends AstHandler<AstJpmRepoConte
         super(cache, globalRegistry, astContext);
         this.context = astContext;
         this.jpmChainExtractorScanner = new JpmChainExtractorScanner(astContext.getJpmToolbox());
-        this.errorTracker = cache.getErrorTracker();
+        this.errorTracker = globalRegistry.errorTracker();
     }
 
 

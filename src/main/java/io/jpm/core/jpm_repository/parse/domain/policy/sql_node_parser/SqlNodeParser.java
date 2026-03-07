@@ -98,11 +98,11 @@ public class SqlNodeParser {
                     // ── WHERE ──────────────────────────────────────────────
                     case "where":
                     case "and":
-                        whereClause.addCondition(buildCondition("AND", stmt, args, ctx));
+                        whereClause.addCondition(buildCondition(" AND ", stmt, args, ctx));
                         break;
 
                     case "or":
-                        whereClause.addCondition(buildCondition("OR", stmt, args, ctx));
+                        whereClause.addCondition(buildCondition(" OR ", stmt, args, ctx));
                         break;
 
                     case "andGroup":
@@ -196,9 +196,11 @@ public class SqlNodeParser {
                             .map(a -> columnResolver.resolve(a, ctx))
                             .collect(Collectors.toList());
 
-                    String logic = s.getCommand().equalsIgnoreCase("or") ? "OR" : "AND";
+                    String logic = s.getCommand().equalsIgnoreCase("or") ? " OR " : " AND ";
                     if (args.size() >= 3) {
-                        group.add(new ConditionNode(logic, args.get(0), args.get(1), args.get(2),  columnResolver));
+                        //String column, String operator, Object value, String logicOperator, ColumnResolver columnResolver
+                        LogPrinter.info("parse[group]"+args);
+                        group.add(new ConditionNode(args.get(0), args.get(1), args.get(2),  logic, columnResolver));
                     }
                 }
             }
@@ -259,10 +261,10 @@ public class SqlNodeParser {
                                          List<String> args, BuildContext ctx) {
         String rawValue = stmt.getArgs().size() > 2 ? stmt.getArgs().get(2) : args.get(2);
         return new ConditionNode(
-                logic,
                 stmt.getArgs().get(0),
                 args.get(1),
                 resolveSqlValue(stmt.getArgs().get(0), rawValue, ctx),
+                logic,
                 columnResolver
         );
     }

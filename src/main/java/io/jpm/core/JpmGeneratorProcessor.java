@@ -2,11 +2,23 @@ package io.jpm.core;
 
 import com.google.auto.service.AutoService;
 
+import groovy.util.logging.Log;
+import io.jpm.common.exception.ErrorTracker;
+import io.jpm.common.exception.ErrorTrackerImpl;
+import io.jpm.config.AppConfig;
 import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.config.ast.GlobalRegistry;
 
 import io.jpm.common.utils.LogPrinter;
+import io.jpm.config.ast.ImmutableGlobalRegistry;
 import io.jpm.core.jpm_data_source_registry.JpmDataSourceRegistry;
+import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.parse.domain.vo.DSLKeywords;
+import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
+import io.jpm.core.jpm_repository.parse.infra.ast.AstExpressionTreeValueResolver;
+import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstArgumentTokenExtractorV2;
+import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProcV2;
+import io.jpm.core.jpm_repository.parse.infra.ast.ast_segment_inliner.AstSegmentInlinerV3;
 import io.jpm.core.jpm_repository.processor.AstJpmRepositoryProcessorV2;
 import io.jpm.core.m_entity.processor.MEntityAstProcessorV2;
 
@@ -96,12 +108,23 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
             return false;
         }
 
-        GlobalRegistry globalRegistry = new GlobalRegistry(processingEnv);
+
         BuildTimeMetadataCache buildTimeMetadataCache = new BuildTimeMetadataCache();
+        GlobalRegistry globalRegistry = null;
+        try {
+            globalRegistry = getGlobalRegistry(buildTimeMetadataCache);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        AppConfig.sqlDialectInit(processingEnv.getOptions());
+
         MEntityAstProcessorV2 mEntityProc = new MEntityAstProcessorV2();
         mEntityProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
         AstJpmRepositoryProcessorV2 aRepoProc = new AstJpmRepositoryProcessorV2();
         aRepoProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
+
+
+
 
 
         try {
@@ -114,70 +137,43 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
             throw new RuntimeException(e);
         }
 
+        return true;
+    }
 
 
-  /*      try {
-            // 1. Gradle이 주입한 옵션 가져오기 (파일 읽기 X, 오직 주입된 값만 신뢰)
-            Map<String, String> options = processingEnv.getOptions();
-
-            LogPrinter.init(processingEnv); //콘솔 찍기용
-
-            // 2. Policy 파싱 (대소문자 무시 처리)
-            String autoStr = options.getOrDefault("auto", "DISABLED").toUpperCase();
-            AutoDDLPolicy policy;
-            try {
-                policy = AutoDDLPolicy.valueOf(autoStr);
-            } catch (IllegalArgumentException e) {
-                // 오타가 있거나 값이 이상하면 DISABLED 처리
-                policy = AutoDDLPolicy.DISABLED;
-                LogPrinter.warn("⚠️ [JPM] 알 수 없는 auto 모드입니다 ('" + autoStr + "'). DISABLED로 설정합니다.");
-            }
+    private GlobalRegistry getGlobalRegistry(BuildTimeMetadataCache cache) throws Exception {
 
 
-            // 3. DISABLED 상태면 즉시 종료 (로그만 남김)
-            if (policy == AutoDDLPolicy.DISABLED) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                        "💤 [JPM] DDL Generator is DISABLED. (Skipping execution)");
-                return true;
-            }
+        try {
+            RepoMetaRegistry repoMetaRegistry = cache.getRepoMetaRegistry();
+
+            ErrorTracker errorTracker = new ErrorTrackerImpl(cache.getSourceLocationCache());
+            AstArgumentTokenExtractorV2 astArgumentTokenExtractorV2 = new AstArgumentTokenExtractorV2(new AstExpressionTreeValueResolver(repoMetaRegistry), cache, errorTracker);
+            AstDslCommandProcV2 commandProcV2 = new AstDslCommandProcV2(cache, errorTracker);
 
 
-            // 4. 실행 정보 로그 출력
-            String dbType = options.getOrDefault("dbType", "MYSQL").toUpperCase();
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                    "🚀 [JPM] Start DDL Generation!222 (Policy: " + policy + ", DB: " + dbType + ")");
+            Map<String, String> safeOptions = processingEnv.getOptions().entrySet().stream()
+                    .filter(e -> e.getValue() != null)
+                    .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 
-            LogPrinter.info("==============================");
-            // 5. 컴포넌트 준비
-
-
-            // DB 타입에 따른 방언 설정
-            AppConfig.sqlDialectInit(options);
-
-
-
-            // 6. Generator 생성 및 실행
-            new MEntityAstProcessor(
-
-                    processingEnv,
-                    roundEnv,
-                    options // 전체 옵션 전달 (url, username, password 포함됨)
-            ).generate();
-
-
-            new AstJpmRepositoryProcessor(roundEnv, processingEnv).generate();
-
-
-
-
+            return ImmutableGlobalRegistry.builder()
+                    .options(safeOptions)
+                    .tokenExtractor(astArgumentTokenExtractorV2)
+                    .commandProcessor(commandProcV2)
+                    .mapParamRegistry(new MapParamRegistry())
+                    .segmentInliner(new AstSegmentInlinerV3(repoMetaRegistry, astArgumentTokenExtractorV2, commandProcV2, DSLKeywords.getDSLKeywords()))
+                    .errorTracker(errorTracker)
+                    .build();
 
         } catch (Exception e) {
+            System.err.println("=== ERROR: " + e.getClass().getName() + ": " + e.getMessage());
+            for (StackTraceElement ste : e.getStackTrace()) {
+                System.err.println("  at " + ste);
+            }
+            throw new RuntimeException(e);
 
-            throw e;
         }
-*/
-        return true;
     }
 
 

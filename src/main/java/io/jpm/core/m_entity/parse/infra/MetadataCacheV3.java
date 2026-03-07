@@ -3,6 +3,7 @@ package io.jpm.core.m_entity.parse.infra;
 import io.jpm.api.MEntity;
 import io.jpm.api.MField;
 import io.jpm.api.MFieldType;
+import io.jpm.common.exception.ErrorTracker;
 import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.core.m_entity.parse.domain.policy.MObjectFactoryV2;
 import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
@@ -26,13 +27,15 @@ public class MetadataCacheV3 {
 
     private final RepoMetaRegistry repoMetaRegistry;
     private final EntityRelationRegistry entityRelationRegistry;
-
-
-    public MetadataCacheV3(BuildTimeMetadataCache cache) {
+    private final ErrorTracker errorTracker;
+    private final MObjectFactoryV2 objectFactory;
+    public MetadataCacheV3(BuildTimeMetadataCache cache, ErrorTracker errorTracker) {
         this.repoMetaRegistry = cache.getRepoMetaRegistry();
         this.entityRelationRegistry = cache.getEntityRelationRegistry();
         this.entityInfoMap = cache.getEntityInfoMap();
         this.parsedVariablesCache = cache.getParsedVariablesCache();
+        this.errorTracker = errorTracker;
+        this.objectFactory = new MObjectFactoryV2();
     }
 
 
@@ -77,7 +80,7 @@ public class MetadataCacheV3 {
         for (List<AstMFieldParserV2.Pair> fieldRawData : rawData) {
             // 🚀 MObjectFactory가 MTreeUtils.Pair를 지원하도록 업데이트되어야 함
             try {
-                MField var = MObjectFactoryV2.createMVariableV2(fieldRawData);
+                MField var = objectFactory.createMVariableV2(fieldRawData, errorTracker);
 
                 variables.add(var);
 

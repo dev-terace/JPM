@@ -2,9 +2,10 @@ package io.jpm.common.exception;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import io.jpm.config.AppConfig;
+import io.jpm.common.exception.cache.domain.vo.SourceLocation;
+
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
-import io.jpm.common.exception.cache.domain.vo.ChainSourceLocation;
+
 import org.gradle.api.GradleException;
 import io.jpm.common.utils.LogPrinter;
 
@@ -13,6 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * ErrorTracker 인스턴스 구현체
@@ -26,6 +28,7 @@ public class ErrorTrackerImpl implements ErrorTracker {
     private ErrorCode err;
     private String className;
     private String methodName;
+    private String fieldName;
     private String chainMethodName;
     private Element errorElement;
     private Trees trees;
@@ -38,6 +41,13 @@ public class ErrorTrackerImpl implements ErrorTracker {
     }
 
     // --- Setter / 체이닝 ---
+
+    @Override
+    public ErrorTracker setFieldName(String fieldName) {
+        this.fieldName = fieldName;
+        return this;
+    }
+
     @Override
     public ErrorTracker setErr(ErrorCode code) {
         this.err = code;
@@ -87,6 +97,7 @@ public class ErrorTrackerImpl implements ErrorTracker {
         errorInfos.add(ErrorInfo.builder()
                 .chainMethodName(chainMethodName)
                 .errorElement(errorElement)
+                .fieldName(fieldName)
                 .className(className)
                 .err(err)
                 .methodName(methodName)
@@ -98,6 +109,11 @@ public class ErrorTrackerImpl implements ErrorTracker {
     // --- Getter ---
     @Override
     public ErrorCode getErr() { return err; }
+
+
+    public String getFieldName() {
+        return fieldName;
+    }
 
     @Override
     public String getClassName() { return className; }
@@ -121,19 +137,41 @@ public class ErrorTrackerImpl implements ErrorTracker {
 
     // --- Report ---
     @Override
-    public String reportAll() {
-        if (errorInfos.isEmpty()) return null;
+    public String reportChain() {
+
+        return buildReport("JPM REPOSITORY ERROR REPORT", e ->
+                cache.popChainSourceLocation(e.getClassName(), e.getMethodName(), e.getChainMethodName())
+        );
+
+    }
+
+
+    @Override
+    public String reportField() {
+        return buildReport("MField ERROR REPORT", e ->
+
+                cache.popFieldSourceLocation(e.getClassName(), e.getFieldName()));
+
+    }
+
+
+
+    private <T extends SourceLocation> String buildReport(String title, Function<ErrorInfo, T> locationProvider) {
+        if (errorInfos.isEmpty()) {
+            return null;
+        }
+
         try {
             StringBuilder sb = new StringBuilder();
             sb.append("\n================================================================================");
-            sb.append("\n[JPM ERROR REPORT]");
+            sb.append("\n[").append(title).append("]");
             sb.append("\n================================================================================");
 
             for (ErrorInfo e : errorInfos) {
-
-                ChainSourceLocation loc = null;
+                // 외부에서 주입받은 로직으로 Location을 가져옴
+                T loc = null;
                 try {
-                    loc = cache.popChainSourceLocation(e.getClassName(), e.getMethodName(), e.getChainMethodName());
+                    loc = locationProvider.apply(e);
                     if (loc != null) {
                         this.errorElement = loc.getElement();
                         this.expression = loc.getExpression();
@@ -145,19 +183,21 @@ public class ErrorTrackerImpl implements ErrorTracker {
 
                 sb.append("\n\n▶ Error: ").append(code);
                 sb.append("\n  Description: ").append(desc);
-                sb.append("\n  Target: repository[").append(e.getClassName()).append("], Method[").append(e.getMethodName()).append("]");
+
+                String occurrence = e.getMethodName() !=null ? e.getMethodName() : e.getClassName();
+                sb.append("\n  Target: className[").append(e.getClassName()).append("], Occurrence[").append(occurrence).append("]");
 
                 if (loc != null) {
                     String ideLink = buildAbsoluteLink(errorElement, loc.getLineNumber());
                     sb.append("\n").append(ideLink);
-                    sb.append("\n  Details: Failed at '").append(String.format("(%s)'", expression));
+                    sb.append("\n  Details: Failed at '").append(String.format("(%s)'", expression.replace("\n", "").replace("\r", "")));
                 } else {
-                    sb.append("Location not found for ")
+                    sb.append("\n  Location not found for ")
                             .append(e.getClassName()).append(".")
-                            .append(e.getMethodName()).append("\n")
-                            .append(e.getChainMethodName()).append("\n");
+                            .append(e.getMethodName()).append("\n  ")
+                            .append(e.getChainMethodName() != null ? e.getChainMethodName() : "Unknown Method").append("\n");
                 }
-                sb.append("\n------------------------------------------------------------\n");
+                sb.append("\n------------------------------------------------------------");
             }
 
             return sb.toString();

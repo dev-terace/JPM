@@ -32,7 +32,7 @@ public class ExecuteDDLXMLHandler extends AstHandler<DDLHandlerContext> {
                 .replace("]]>", "");        // 끝 태그 삭제
 
         // 1-4. DB 연결 옵션 가져오기
-        Map<String, String> options = globalRegistry.getOptions();
+        Map<String, String> options = globalRegistry.options();
 
         // 1-5. 즉시 DDL 실행 (실패 시 여기서 중단됨)
         String auto = options.get("auto");

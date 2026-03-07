@@ -15,7 +15,7 @@ public class JpmFieldExtractorScanner extends TreePathScanner<Void, Void> {
     private final JpmToolbox toolbox;
 
     private String currentClassName;
-    private String currentEntityName;
+
     private Element currentElement;
 
     public JpmFieldExtractorScanner(SourceLocationCache cache, JpmToolbox toolbox) {
@@ -31,9 +31,6 @@ public class JpmFieldExtractorScanner extends TreePathScanner<Void, Void> {
         this.currentClassName = className;
     }
 
-    public void setEntityName(String entityName) {
-        this.currentEntityName = entityName;
-    }
 
     @Override
     public Void visitVariable(VariableTree node, Void p) {
@@ -45,12 +42,14 @@ public class JpmFieldExtractorScanner extends TreePathScanner<Void, Void> {
             String fieldName = node.getName().toString();
             long line = toolbox.getLineNumber(node);
 
+            String codeSnippest = node.toString();
+
             FieldSourceLocation loc = FieldSourceLocation.builder()
                     .className(currentClassName)
-                    .entityName(currentEntityName)
                     .fieldName(fieldName)
                     .lineNumber(line)
                     .element(currentElement)
+                    .expression(codeSnippest)
                     .build();
 
             // ✅ 캐시에 저장

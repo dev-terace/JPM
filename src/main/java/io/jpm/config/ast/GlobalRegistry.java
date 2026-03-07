@@ -1,39 +1,26 @@
 package io.jpm.config.ast;
 
+import com.sun.source.util.Trees;
+import io.jpm.common.exception.ErrorTracker;
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.AppConfig;
 import io.jpm.config.AutoDDLPolicy;
+import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
+import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstArgumentTokenExtractorV2;
+import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProcV2;
+import io.jpm.core.jpm_repository.parse.infra.ast.ast_segment_inliner.AstSegmentInlinerV3;
+import org.immutables.value.Value;
 
-import io.jpm.common.utils.LogPrinter;
-import javax.annotation.processing.ProcessingEnvironment;
 import java.util.Map;
 
-/**
- * [JPM] 컴파일 타임 전역 설정 정보
- * 레지스트리는 BuildTimeMetadataCache가 담당하므로, 여기서는 옵션값만 관리합니다.
- */
-public class GlobalRegistry {
+@Value.Immutable
+public abstract class GlobalRegistry {
 
-    private final AutoDDLPolicy autoPolicy;
-    private final String dbType;
-    private final Map<String, String> options;
+    public abstract Map<String, String> options();
 
-    public GlobalRegistry(ProcessingEnvironment processingEnv) {
-        this.options = processingEnv.getOptions();
-
-        // 1. auto 모드 설정 (DISABLED, CREATE, UPDATE 등)
-        this.autoPolicy = initAutoPolicy();
-
-        // 2. DB 타입 설정
-        this.dbType = options.getOrDefault("dbType", "MYSQL").toUpperCase();
-
-        // 3. SQL Dialect 초기화 (AppConfig 내부의 Dialect 세팅 수행)
-        AppConfig.sqlDialectInit(options);
-
-        LogPrinter.info("🚀 [GlobalRegistry] Initialized - Policy: " + autoPolicy + ", DB: " + dbType);
-    }
-
-    private AutoDDLPolicy initAutoPolicy() {
-        String autoStr = options.getOrDefault("auto", "DISABLED").toUpperCase();
+    @Value.Derived
+    public AutoDDLPolicy autoPolicy() {
+        String autoStr = options().getOrDefault("auto", "DISABLED").toUpperCase();
         try {
             return AutoDDLPolicy.valueOf(autoStr);
         } catch (IllegalArgumentException e) {
@@ -42,24 +29,18 @@ public class GlobalRegistry {
         }
     }
 
-    // --- Getters ---
-    public boolean isEnabled() {
-        return autoPolicy != AutoDDLPolicy.DISABLED;
+    @Value.Derived
+    public String dbType() {
+        return options().getOrDefault("dbType", "MYSQL").toUpperCase();
     }
 
-    public AutoDDLPolicy getAutoPolicy() {
-        return autoPolicy;
-    }
+    // 기존 필드들
+    public abstract AstArgumentTokenExtractorV2 tokenExtractor();
+    public abstract AstDslCommandProcV2 commandProcessor();
+    public abstract MapParamRegistry mapParamRegistry();
+    public abstract AstSegmentInlinerV3 segmentInliner();
+    public abstract ErrorTracker errorTracker();
 
-    public String getDbType() {
-        return dbType;
-    }
 
-    public String getOption(String key, String defaultValue) {
-        return options.getOrDefault(key, defaultValue);
-    }
-
-    public Map<String, String> getOptions() {
-        return options;
-    }
+    // AppConfig 초기화는 빌드 후 별도 호
 }

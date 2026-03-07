@@ -1,17 +1,9 @@
-package io.jpm.core.m_entity.generator.domain.policy.my_batis_ddl_executor_source_write;
+package io.jpm.core.m_entity.generator.domain.policy.deprecated.my_batis_ddl_executor_source_write;
 
-import io.jpm.core.m_entity.processor.MEntityAstProcessor;
-
-import javax.annotation.processing.FilerException; // 🔥 핵심: 중복 생성 에러 처리를 위해 필요
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.io.PrintWriter;
-
+@Deprecated
 public class JpmMyBatisXMLDDLExecutorSourceWriter implements MyBatisXMLDDLExecutorSourceWriter {
 
-    private final ProcessingEnvironment processingEnv;
+ /*   private final ProcessingEnvironment processingEnv;
 
     public JpmMyBatisXMLDDLExecutorSourceWriter(ProcessingEnvironment processingEnv) {
         this.processingEnv = processingEnv;
@@ -182,5 +174,5 @@ public class JpmMyBatisXMLDDLExecutorSourceWriter implements MyBatisXMLDDLExecut
         out.println("            System.out.println(\"✅ [SQL_SESSION] Executed: \" + ns + \".\" + id);");
         out.println("        } catch (Exception e) { e.printStackTrace(); }");
         out.println("    }");
-    }
+    }*/
 }

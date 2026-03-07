@@ -12,7 +12,7 @@ public class AstJpmRepoContext {
     private List<RepoMeta> repoMetas;
 
 
-    List<MybatisXmlGenerator.MethodData> methodDataList;
+    private List<MybatisXmlGenerator.MethodData> methodDataList;
 
     public List<MybatisXmlGenerator.MethodData> getMethodDataList() {
         return methodDataList;

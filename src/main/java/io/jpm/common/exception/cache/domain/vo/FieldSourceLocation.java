@@ -1,35 +1,21 @@
 package io.jpm.common.exception.cache.domain.vo;
 
 import javax.lang.model.element.Element;
+import org.immutables.value.Value;
 
-public class FieldSourceLocation extends SourceLocation {
-    private final String entityName;
-    private final String fieldName;
+@Value.Immutable
+@Value.Style(builder = "builder")
+public abstract class FieldSourceLocation extends SourceLocation {
 
-    private FieldSourceLocation(Builder builder) {
-        super(builder.className, builder.lineNumber, builder.element);
-        this.entityName = builder.entityName;
-        this.fieldName  = builder.fieldName;
-    }
 
-    public String getEntityName() { return entityName; }
-    public String getFieldName()  { return fieldName; }
 
-    public static Builder builder() { return new Builder(); }
+    public  abstract String getClassName();
+    public abstract String getFieldName();
+    public abstract long getLineNumber();
+    public abstract Element getElement();
 
-    public static class Builder {
-        private String className;
-        private long lineNumber;
-        private Element element;
-        private String entityName;
-        private String fieldName;
 
-        public Builder className(String className)      { this.className = className;   return this; } // 버그 수정됨
-        public Builder lineNumber(long lineNumber)      { this.lineNumber = lineNumber; return this; }
-        public Builder element(Element element)         { this.element = element;       return this; }
-        public Builder entityName(String entityName)    { this.entityName = entityName; return this; }
-        public Builder fieldName(String fieldName)      { this.fieldName = fieldName;   return this; }
-
-        public FieldSourceLocation build() { return new FieldSourceLocation(this); }
+    public static ImmutableFieldSourceLocation.Builder builder() {
+        return ImmutableFieldSourceLocation.builder();
     }
 }

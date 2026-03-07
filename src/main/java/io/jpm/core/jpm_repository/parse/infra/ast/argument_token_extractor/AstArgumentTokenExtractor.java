@@ -17,6 +17,7 @@ import java.util.List;
  * DSL 메서드 호출(MethodInvocationTree)에서 인자 토큰 리스트를 추출합니다.
  * 기존 extractTokensTree() 의 단일 책임 분리 버전입니다.
  */
+@Deprecated
 public class AstArgumentTokenExtractor {
 
     private static final List<String> CONDITION_COMMANDS = Arrays.asList("where", "and", "or");
@@ -39,6 +40,24 @@ public class AstArgumentTokenExtractor {
 
             for (int i = 0; i < arguments.size(); i++) {
                 ExpressionTree arg = arguments.get(i);
+
+
+
+                if (arg instanceof LambdaExpressionTree) {
+                    LambdaExpressionTree lambda = (LambdaExpressionTree) arg;
+                    if (lambda.getBody() instanceof MethodInvocationTree) {
+                        MethodInvocationTree lambdaCall = (MethodInvocationTree) lambda.getBody();
+                        for (ExpressionTree lambdaArg : lambdaCall.getArguments()) {
+                            String resolved = valueResolver.resolve(lambdaArg, mapParamRegistry, false, false);
+                            result.add(resolved != null ? resolved : "");
+                        }
+                    }
+                    continue;
+                }
+
+
+
+
                 boolean quoteString = isCondition && i == 2;
 
                 String firstColumn = valueResolver.resolve(arguments.get(0), mapParamRegistry, false, false);

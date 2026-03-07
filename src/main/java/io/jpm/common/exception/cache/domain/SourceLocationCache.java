@@ -9,4 +9,5 @@ public interface SourceLocationCache {
     void registerMethodLocation(String className, String methodName, MethodSourceLocation loc);
     void registerChainLocation(String className, String methodName, ChainSourceLocation loc);
     ChainSourceLocation popChainSourceLocation(String className, String methodName, String chainMethodName);
+    FieldSourceLocation popFieldSourceLocation(String entityName, String fieldName);
 }

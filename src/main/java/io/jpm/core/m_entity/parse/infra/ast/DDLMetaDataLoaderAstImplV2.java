@@ -4,15 +4,12 @@ package io.jpm.core.m_entity.parse.infra.ast;
 
 import io.jpm.api.MEntity;
 import com.sun.source.util.Trees;
-import io.jpm.config.AppConfig;
 import io.jpm.api.MField;
 import io.jpm.core.m_entity.generator.domain.vo.DDLTableMetadata;
 import io.jpm.core.m_entity.parse.domain.ast.DDLMetaDataLoader;
 import io.jpm.core.m_entity.parse.domain.vo.MEntityInfo;
 import io.jpm.core.m_entity.parse.domain.policy.TableMetadataFactory;
 import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.m_entity.parse.infra.MetadataCacheV2;
-import io.jpm.common.utils.LogPrinter;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -27,8 +24,9 @@ import java.util.Set;
 
 
 
-public class DDLMetaDataLoaderAstImplV2 implements DDLMetaDataLoader {
-
+@Deprecated
+public class DDLMetaDataLoaderAstImplV2  {
+/*
     private final RoundEnvironment roundEnv;
     private final Messager messager;
     private final Trees trees; // 🚀 추가: Tree API의 핵심
@@ -78,9 +76,9 @@ public class DDLMetaDataLoaderAstImplV2 implements DDLMetaDataLoader {
         return tables;
     }
 
-    /**
+    *//**
      * Tree API를 사용하여 클래스 내부의 MField 정보를 직접 추출합니다.
-     */
+     *//*
     private void scanEntity(TypeElement classElement) {
         try {
             List<VariableElement> fields = ElementFilter.fieldsIn(classElement.getEnclosedElements());
@@ -126,5 +124,5 @@ public class DDLMetaDataLoaderAstImplV2 implements DDLMetaDataLoader {
             }
         }
         return classElement.getSimpleName().toString();
-    }
+    }*/
 }

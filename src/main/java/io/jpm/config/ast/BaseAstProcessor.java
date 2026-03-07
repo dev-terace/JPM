@@ -24,6 +24,7 @@ public abstract class BaseAstProcessor {
         this.roundEnv = roundEnv;
         this.cache = buildTimeMetadataCache;
         this.context = new AstContext(processingEnv);
+
         this.globalRegistry = globalRegistry;
         onInit();
     }

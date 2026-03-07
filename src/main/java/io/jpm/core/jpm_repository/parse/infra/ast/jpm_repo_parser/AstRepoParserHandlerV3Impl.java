@@ -24,6 +24,7 @@ import java.util.*;
 
 
 
+@Deprecated
 public class AstRepoParserHandlerV3Impl {
     private static final Set<String> DSL_KEYWORDS = DSLKeywords.getDSLKeywords();
 

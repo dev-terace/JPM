@@ -18,6 +18,7 @@ import java.util.Set;
  * 세그먼트(Segment) 클래스의 특정 메서드를 현재 MethodMeta 에 인라인합니다.
  * 기존 inlineSegmentMethodTree() 의 단일 책임 분리 버전입니다.
  */
+@Deprecated
 public class AstSegmentInliner {
 
     private final RepoMetaRegistry repoMetaRegistry;
@@ -79,8 +80,11 @@ public class AstSegmentInliner {
             ExpressionTree expr = ((ExpressionStatementTree) stmt).getExpression();
             for (MethodInvocationTree call : AstMethodTreeUtil.flattenChain(expr)) {
                 String command = AstMethodTreeUtil.getMethodName(call);
+                LogPrinter.info("[SegmentInliner] command: " + command);
                 if (dslKeywords.contains(command)) {
                     List<String> rawArgs = tokenExtractor.extract(call, mapParamRegistry, methodMeta);
+
+
                     commandProcessor.process(command, rawArgs, methodMeta, mapParamRegistry);
                 }
             }

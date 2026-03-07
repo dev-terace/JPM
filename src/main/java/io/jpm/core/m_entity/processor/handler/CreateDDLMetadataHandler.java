@@ -1,8 +1,12 @@
 package io.jpm.core.m_entity.processor.handler;
 
+import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import io.jpm.api.MEntity;
 import io.jpm.api.MField;
+import io.jpm.common.exception.ErrorTracker;
+import io.jpm.common.exception.config.JpmFieldExtractorScanner;
+import io.jpm.common.exception.config.JpmToolbox;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
 import io.jpm.config.ast.AstHandler;
@@ -29,11 +33,17 @@ public class CreateDDLMetadataHandler extends AstHandler<DDLHandlerContext> {
 
     private final Trees trees;
     private final MetadataCacheV3 metadataCache;
+    private final ErrorTracker errorTracker;
+    private final JpmFieldExtractorScanner fieldExtractorScanner;
+    private final AstContext astContext;
+
     public CreateDDLMetadataHandler(BuildTimeMetadataCache cache, GlobalRegistry globalRegistry, AstContext astContext) {
         super(cache, globalRegistry, astContext);
         this.trees = astContext.getTrees();
-
-        this.metadataCache = new MetadataCacheV3(cache);
+        this.errorTracker = globalRegistry.errorTracker();
+        this.metadataCache = new MetadataCacheV3(cache, errorTracker);
+        this.astContext = astContext;
+        this.fieldExtractorScanner = new JpmFieldExtractorScanner(cache.getSourceLocationCache(), astContext.getJpmToolbox());
     }
 
 
@@ -48,6 +58,15 @@ public class CreateDDLMetadataHandler extends AstHandler<DDLHandlerContext> {
         // --- Step 1. 모든 엔티티 사전 스캔 (Tree API 활용) ---
         for (Element element : elements) {
             if (element instanceof TypeElement) {
+                errorTracker.setClassName(element.asType().toString());
+                JpmToolbox jpmToolbox = astContext.getJpmToolbox();
+                TreePath path = trees.getPath(element);
+                jpmToolbox.setCurrentCut(path.getCompilationUnit());
+                errorTracker.setTrees(trees);
+                fieldExtractorScanner.setClassName(element.asType().toString());
+                fieldExtractorScanner.init(element);
+                fieldExtractorScanner.scan(path, null);
+
 
                 scanEntity((TypeElement) element);
             }

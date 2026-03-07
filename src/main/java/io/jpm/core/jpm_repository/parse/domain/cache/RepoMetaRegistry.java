@@ -24,7 +24,7 @@ public interface RepoMetaRegistry {
 
 
     Class<?> getEntityClass(String entityName);
-
+    List<String> getSegmentVarNames(String entityName);
 
 
 

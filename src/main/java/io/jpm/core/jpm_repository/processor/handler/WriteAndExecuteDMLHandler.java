@@ -1,6 +1,5 @@
 package io.jpm.core.jpm_repository.processor.handler;
 
-import io.jpm.common.exception.ErrorCollector;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
@@ -33,12 +32,14 @@ public class WriteAndExecuteDMLHandler extends AstHandler<AstJpmRepoContext> {
         this.repoMetaRegistry = cache.getRepoMetaRegistry();
         ColumnResolver columnResolver = new ColumnResolver(repoMetaRegistry);
         this.binder = new SqlMapperBinderImplV2(repoMetaRegistry, columnResolver);
-        this.errorTracker = cache.getErrorTracker();
+        this.errorTracker = globalRegistry.errorTracker();
     }
+
 
     @Override
     public void handle(RoundEnvironment roundEnv) throws Exception {
         try {
+
             List<RepoMeta> repoMetas = handlerContext.getRepoMetas();
 
 
@@ -48,6 +49,7 @@ public class WriteAndExecuteDMLHandler extends AstHandler<AstJpmRepoContext> {
                 List<MybatisXmlGenerator.MethodData> methodDataList = new ArrayList<>();
 
                 for (MethodMeta method : repoMeta.getMethods()) {
+                    LogPrinter.info("[WriteAndExecuteDMLHandler] MethodName=" + method.getMethodName());
                     EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(method.getTargetType());
                     LogPrinter.info("generateSql: " + method.getTargetType());
                     String finalSql = String.valueOf(binder.generateSql(method, entityMeta));
@@ -58,7 +60,7 @@ public class WriteAndExecuteDMLHandler extends AstHandler<AstJpmRepoContext> {
                 }
 
 
-                String errorMessage = errorTracker.reportAll();
+                String errorMessage = errorTracker.reportChain();
 
                 if(errorMessage != null) {throw  new IllegalArgumentException(errorMessage);}
 
@@ -76,8 +78,11 @@ public class WriteAndExecuteDMLHandler extends AstHandler<AstJpmRepoContext> {
 
 
 
-        }catch (Exception e){
-            LogPrinter.error(e.getMessage());
+        } catch (Exception e) {
+            for (StackTraceElement ste : e.getStackTrace()) {
+                LogPrinter.info("[STACK] " + ste.toString());
+            }
+            throw new IllegalArgumentException(e);
         }
 
     }

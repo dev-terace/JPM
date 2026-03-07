@@ -5,6 +5,7 @@ import io.jpm.config.AppConfig;
 import io.jpm.common.exception.ErrorCode;
 import io.jpm.common.exception.ErrorCollector;
 import io.jpm.config.ast.BuildTimeMetadataCache;
+import io.jpm.config.ast.GlobalRegistry;
 import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
 import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
@@ -22,10 +23,10 @@ public class JoinNodeValidatorPolicyV2 {
     private final ColumnResolver columnResolver;
 
 
-    public JoinNodeValidatorPolicyV2(BuildTimeMetadataCache cache, ColumnResolver columnResolver) {
+    public JoinNodeValidatorPolicyV2(BuildTimeMetadataCache cache, ErrorTracker errorTracker, ColumnResolver columnResolver) {
         this.entityRelationRegistry = cache.getEntityRelationRegistry();
         this.repoMetaRegistry = cache.getRepoMetaRegistry();
-        this.errorTracker = cache.getErrorTracker();
+        this.errorTracker = errorTracker;
         this.columnResolver = columnResolver;
     }
 

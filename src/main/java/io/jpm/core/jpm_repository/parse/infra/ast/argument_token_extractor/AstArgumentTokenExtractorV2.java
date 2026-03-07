@@ -1,6 +1,7 @@
 package io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor;
 
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MethodInvocationTree;
 import io.jpm.common.exception.ErrorTracker;
@@ -26,9 +27,9 @@ public class AstArgumentTokenExtractorV2 {
     private final ArgValidatorPolicyV2 validator;
 
 
-    public AstArgumentTokenExtractorV2(AstExpressionTreeValueResolver valueResolver, BuildTimeMetadataCache cache) {
+    public AstArgumentTokenExtractorV2(AstExpressionTreeValueResolver valueResolver, BuildTimeMetadataCache cache ,ErrorTracker errorTracker) {
         this.valueResolver = valueResolver;
-        this.validator = new ArgValidatorPolicyV2(cache);
+        this.validator = new ArgValidatorPolicyV2(cache, errorTracker);
 
 
 
@@ -38,12 +39,41 @@ public class AstArgumentTokenExtractorV2 {
         try {
             List<String> result = new ArrayList<>();
             String command = AstMethodTreeUtil.getMethodName(call);
+
+            LogPrinter.info("AstArgumentTokenExtractorV2 command=" + command);
+
             boolean isCondition = CONDITION_COMMANDS.contains(command);
 
             List<? extends ExpressionTree> arguments = call.getArguments();
 
             for (int i = 0; i < arguments.size(); i++) {
                 ExpressionTree arg = arguments.get(i);
+
+
+                if (arg instanceof LambdaExpressionTree ) {
+                    LambdaExpressionTree lambda = (LambdaExpressionTree) arg;
+                    if (lambda.getBody() instanceof MethodInvocationTree) {
+                        MethodInvocationTree lambdaCall = (MethodInvocationTree) lambda.getBody();
+
+                        // ✅ 메서드명 먼저 추가
+
+                        String methodName = AstMethodTreeUtil.getMethodName(lambdaCall);
+                        result.add(methodName);
+
+                        for (ExpressionTree lambdaArg : lambdaCall.getArguments()) {
+                            String resolved = valueResolver.resolve(lambdaArg, mapParamRegistry, false, false);
+                            result.add(resolved != null ? resolved : "");
+                        }
+                    }
+                    LogPrinter.info("AstArgumentTokenExtractorV2 result=" + result);
+                    continue;
+                }
+
+
+
+
+
+
                 boolean quoteString = isCondition && i == 2;
 
                 String firstColumn = valueResolver.resolve(arguments.get(0), mapParamRegistry, false, false);

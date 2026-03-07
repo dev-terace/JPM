@@ -14,7 +14,7 @@ public interface ErrorTracker {
 
     // --- Setter / Chaining Methods ---
     ErrorTracker setErr(ErrorCode code);
-
+    ErrorTracker setFieldName(String fieldName);
     ErrorTracker setClassName(String className);
 
     ErrorTracker setMethodName(String methodName);
@@ -50,5 +50,6 @@ public interface ErrorTracker {
      * Collects all currently accumulated errors and generates a report string.
      * Should handle missing source locations gracefully.
      */
-    String reportAll();
+    String reportChain();
+    String reportField();
 }

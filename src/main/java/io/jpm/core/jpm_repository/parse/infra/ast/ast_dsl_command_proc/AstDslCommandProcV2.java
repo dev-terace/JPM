@@ -5,6 +5,7 @@ import io.jpm.api.MqAssociation;
 import io.jpm.api.MqCollection;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.config.ast.BuildTimeMetadataCache;
+import io.jpm.config.ast.GlobalRegistry;
 import io.jpm.core.jpm_repository.generator.infra.utils.ColumnResolver;
 import io.jpm.core.jpm_repository.parse.domain.vo.DslStatement;
 import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
@@ -43,13 +44,13 @@ public class AstDslCommandProcV2 {
     private final JoinNodeValidatorPolicyV2 joinNodeValidator;
 
 
-    public AstDslCommandProcV2(BuildTimeMetadataCache cache) {
+    public AstDslCommandProcV2(BuildTimeMetadataCache cache, ErrorTracker errorTracker) {
         this.repoMetaRegistry = cache.getRepoMetaRegistry();
 
 
 
         this.joinNodeValidator = new JoinNodeValidatorPolicyV2
-                (cache, new ColumnResolver(cache.getRepoMetaRegistry()));
+                (cache, errorTracker, new ColumnResolver(cache.getRepoMetaRegistry()));
     }
 
     public void process(String command, List<String> rawArgs,
@@ -98,7 +99,7 @@ public class AstDslCommandProcV2 {
 
     private void processDefault(String command, List<String> rawArgs, MethodMeta methodMeta) {
         methodMeta.addStatement(new DslStatement(command, rawArgs));
-
+        LogPrinter.info("[rawARgs] : " + rawArgs +", command :" + command);
         if (TARGET_COMMANDS.contains(command) && !rawArgs.isEmpty()) {
             LogPrinter.info("[DslCommandProcessor] command=" + command + " rawArgs=" + rawArgs);
             methodMeta.setTargetType(rawArgs.get(0).replace(".class", ""));
@@ -115,6 +116,7 @@ public class AstDslCommandProcV2 {
         if (classNamePart == null) return MapJoinMeta.MappingType.AUTO;
 
         try {
+
             EntityMeta meta = repoMetaRegistry.getEntityMeta(classNamePart);
             if (meta == null) return MapJoinMeta.MappingType.AUTO;
 

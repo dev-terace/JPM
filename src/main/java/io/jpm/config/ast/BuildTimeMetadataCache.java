@@ -5,6 +5,7 @@ import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.exception.ErrorTrackerImpl;
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
 import io.jpm.common.exception.cache.infra.SourceLocationCacheImpl;
+import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
 import io.jpm.core.jpm_repository.parse.infra.RepoMetaRegistryImpl;
 import io.jpm.core.jpm_repository.parse.infra.RepoRelationRegistryImpl;
 import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
@@ -28,19 +29,23 @@ public class BuildTimeMetadataCache {
     private final RepoMetaRegistry repoMetaRegistry;
     private final EntityRelationRegistry relationRegistry;
     private final SourceLocationCache sourceLocationCache;
-    private final ErrorTracker errorTracker;
+
+
+    private final MapParamRegistry mapParamRegistry;
     // 생성자에서 의존성 초기화 (AppConfig 사용)
     public BuildTimeMetadataCache() {
         this.repoMetaRegistry = new RepoMetaRegistryImpl();
         this.relationRegistry = new RepoRelationRegistryImpl();
         this.sourceLocationCache = new SourceLocationCacheImpl();
-        this.errorTracker = new ErrorTrackerImpl(sourceLocationCache);
+        this.mapParamRegistry = new MapParamRegistry();
     }
 
 
-    public ErrorTracker getErrorTracker() {
-        return errorTracker;
+    public MapParamRegistry getMapParamRegistry() {
+        return mapParamRegistry;
     }
+
+
 
     // 외부에서 로컬 캐시 데이터가 필요할 때를 위한 Getter 제공
     public Map<String, MEntityInfo> getEntityInfoMap() {

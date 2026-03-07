@@ -6,6 +6,7 @@ package io.jpm.core.m_entity.parse.domain.policy;
 import io.jpm.api.MField;
 import io.jpm.api.MFieldType;
 import io.jpm.api.OnDeleteType;
+import io.jpm.common.exception.ErrorTracker;
 import io.jpm.core.m_entity.valid.MFieldValidator;
 import io.jpm.core.m_entity.parse.infra.ast.AstMFieldParserV2; // 🚀 V2: Tree API 유틸 사용
 
@@ -16,9 +17,12 @@ public class MObjectFactoryV2 {
     /**
      * MTreeUtils에서 추출한 Pair 리스트를 바탕으로 MField 객체를 생성합니다.
      */
+    private final MFieldValidator validator;
+    public MObjectFactoryV2() {
+        this.validator = new MFieldValidator();
+    }
 
-
-    public static MField createMVariableV2(List<AstMFieldParserV2.Pair> pairs) {
+    public MField createMVariableV2(List<AstMFieldParserV2.Pair> pairs, ErrorTracker errorTracker) {
         MField.Builder builder = MField.builder();
 
         // 1. 변수명(fieldName)을 기본 컬럼명으로 먼저 설정
@@ -82,7 +86,7 @@ public class MObjectFactoryV2 {
         MField var = builder.build();
 
         // 기존에 분리해두신 Validator를 호출하여 논리 오류 체크
-        MFieldValidator.validate(var);
+        validator.validate(var, errorTracker);
 
         return var;
     }

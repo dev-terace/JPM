@@ -1,42 +1,37 @@
 package io.jpm.api;
 
-public abstract class JpmAbstractQuerySegment<T> {
+import java.lang.reflect.InvocationTargetException;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+public abstract class JpmAbstractQuerySegment {
 
     /**
      * 사용자가 target.id 처럼 필드에 접근할 수 있게 해주는 더미 객체입니다.
      */
-    public T segment;
-
-
-
-
-    public static Sql.Raw raw(Object obj) { return new Sql.Raw(obj); }
 
 
 
 
 
-    public static Sql.Quoted quoted(String val) { return new Sql.Quoted(val); }
+    public static Arg.Raw r(Object obj) { return new Arg.Raw(obj); }
+    public static <E, R> Arg.Raw r(MFieldRef<E, R> fieldRef) { return new Arg.Raw(fieldRef); }
 
 
-    public static  Sql.Bind bind(String val) { return new Sql.Bind(val); }
-    public static <E, R> Sql.Bind bind(MFieldRef<E, R> fieldRef) { return new Sql.Bind(fieldRef); }
 
 
-    public static class Sql {
-        // 1. Raw: 무엇이든 허용 (col, as, String, MethodRef 등)
-        public static Raw raw(Object val) { return new Raw(val); }
+    public static Arg.Quoted q(String val) { return new Arg.Quoted(val); }
 
-        // 2. Quoted: 값(Literal)에 따옴표를 붙이는 용도 (String 또는 MethodRef)
-        public static Quoted quoted(String val) { return new Quoted(val); }
 
-        // 3. Bind: 마이바티스 파라미터 바인딩용 (String 또는 MethodRef)
-        public static Bind bind(String val) { return new Bind(val); }
-        public static <E, R> Bind bind(MFieldRef<E, R> fieldRef) { return new Bind(fieldRef); }
+    public static  Arg.Bind b(String val) { return new Arg.Bind(val); }
+    public static <E, R> Arg.Bind b(MFieldRef<E, R> fieldRef) { return new Arg.Bind(fieldRef); }
 
-        // --- 내부 클래스 정의 ---
 
-        public static class Raw {
+    public static class Arg {
+        // 1. 모든 내부 클래스가 구현할 마커 인터페이스 선언
+        public interface IArg {}
+
+        public static class Raw implements IArg { // implements 추가
             public String val;
             public Object origin;
             public Raw(Object v) {
@@ -46,8 +41,7 @@ public abstract class JpmAbstractQuerySegment<T> {
             @Override public String toString() { return val; }
         }
 
-
-        public static class Quoted {
+        public static class Quoted implements IArg { // implements 추가
             public String val;
             public Object origin;
             public Quoted(Object v) {
@@ -57,7 +51,7 @@ public abstract class JpmAbstractQuerySegment<T> {
             @Override public String toString() { return "'" + val + "'"; }
         }
 
-        public static class Bind {
+        public static class Bind implements IArg { // implements 추가
             public String val;
             public Object origin;
             public Bind(Object v) {
@@ -102,10 +96,11 @@ public abstract class JpmAbstractQuerySegment<T> {
 
 
 
+
     // =======================================================
     // --- Selectable 구현 ---
     // =======================================================
-    public void select(String... cols) {}
+
     public void select(Object... cols) {}
     // [수정] 조인된 다른 엔티티의 컬럼도 select 할 수 있도록 <?> 로 변경
 
@@ -118,13 +113,13 @@ public abstract class JpmAbstractQuerySegment<T> {
     }
 
     public void selectRaw(String... rawSqls) {}
+    public void selectRaw(Object... rawSqls) {}
+
     public void from(Class<?> entityClass) {}
     public void from(String table) {}
     public void from(Class<?> entityClass, String alias) {}
 
-    public void from(Object table) {
-
-    }
+    public void from(Object table) {}
 
     // =======================================================
     // --- Conditional 구현 ---
@@ -145,6 +140,8 @@ public abstract class JpmAbstractQuerySegment<T> {
     public <E, R> void where(MFieldRef<E, R> fieldRef, String op, Object value) {}
     public <E, R> void and(MFieldRef<E, R> fieldRef, String op, Object value) {}
     public <E, R> void or(MFieldRef<E, R> fieldRef, String op, Object value) {}
+
+
 
     public <E, R> void where(MFieldRef<E, R> fieldRef, String op, String value) {}
     public <E, R> void and(MFieldRef<E, R> fieldRef, String op, String value) {}
@@ -288,6 +285,32 @@ public abstract class JpmAbstractQuerySegment<T> {
 
 
     public <E, R> void having(MFieldRef<E, R> fieldRef, String op, Object value) {}
+
     public void havingRaw(String rawSql) {}
+
+
+
+
+    @FunctionalInterface
+    public interface segmentAction<E> {
+        // 모든 메서드 참조를 수용할 수 있는 느슨한 시그니처
+        void apply(E segment, Object... args);
+    }
+
+
+
+
+
+    // segment는 단순하게
+    public <E extends JpmAbstractQuerySegment> void segment(
+            Class<E> type,
+            Consumer<E> consumer  // java.util.function.Consumer 사용
+    ) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        E instance = type.getDeclaredConstructor().newInstance();
+        consumer.accept(instance);
+    }
+
+
+
 
 }

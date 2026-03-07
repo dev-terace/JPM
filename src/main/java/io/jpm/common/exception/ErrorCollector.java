@@ -15,6 +15,8 @@ import java.util.List;
 
 //싱글톤 처리
 //나중에 doc 주소 붙일 수도 있음
+
+@Deprecated
 public class ErrorCollector {
     private static final SourceLocationCache cache = AppConfig.getSourceLocationCache();
     // 현재 수집 중인 임시 상태값들 (Buffer)

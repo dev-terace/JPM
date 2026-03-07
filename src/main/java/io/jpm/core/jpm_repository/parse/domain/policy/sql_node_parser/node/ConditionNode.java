@@ -61,7 +61,14 @@ public class ConditionNode implements SqlNode {
         String s = val.toString();
 
         // 이미 처리된 케이스
+
+        if (s.startsWith("''") && s.endsWith("''")) {
+            return s.replaceAll("^''|''$", "'");
+        }
+
         if (s.startsWith("'") && s.endsWith("'")) return s;
+
+
         if (s.equals("?")) return s;
         if (s.contains("#{")) return s;
 

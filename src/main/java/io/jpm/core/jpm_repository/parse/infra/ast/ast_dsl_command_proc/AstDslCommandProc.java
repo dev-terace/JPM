@@ -23,6 +23,7 @@ import java.util.List;
  *
  * 기존 processDslCommand() 의 단일 책임 분리 버전입니다.
  */
+@Deprecated
 public class AstDslCommandProc {
 
     private static final List<String> JOIN_COMMANDS =

@@ -37,9 +37,9 @@ public class GroupNode implements SqlNode {
                 // 만약 다른 타입의 노드라면 기본 그룹의 연산자(groupType.getOperator())를 폴백(Fallback)으로 사용
                 if (child instanceof ConditionNode) { // 패키지명은 프로젝트에 맞게 맞춰주세요!
                     String logic = ((ConditionNode) child).getLogicOperator();
-                    sb.append(" ").append(logic != null ? logic : groupType.getOperator()).append(" ");
+                    sb.append(logic != null ? logic : groupType.getOperator());
                 } else {
-                    sb.append(" ").append(groupType.getOperator()).append(" ");
+                    sb.append(groupType.getOperator());
                 }
                 sb.append(sql);
             }

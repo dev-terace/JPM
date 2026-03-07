@@ -28,14 +28,14 @@ import java.util.Properties;
 public class MyBatisDDLDirectExecutor {
 
 
-
+/*
     public MyBatisDDLDirectExecutor() {
 
     }
 
-    /**
+    *//**
      * 외부에서 호출하는 유일한 공개 메서드
-     */
+     *//*
     public void execute(String sql, Map<String, String> aptOptions) throws Exception {
         LogPrinter.info("🚀 Executing Generated DDL (Using application.properties keys)...");
 
@@ -133,7 +133,7 @@ public class MyBatisDDLDirectExecutor {
         return dbType != null && dbType.toUpperCase().contains("POSTGRES")
                 ? "org.postgresql.Driver"
                 : "com.mysql.cj.jdbc.Driver";
-    }
+    }*/
 
 
 }

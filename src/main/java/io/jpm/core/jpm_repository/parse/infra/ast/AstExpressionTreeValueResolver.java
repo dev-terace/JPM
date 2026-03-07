@@ -13,6 +13,9 @@ import java.util.List;
  * ExpressionTree 노드를 SQL 토큰(문자열)으로 변환합니다.
  * 기존 resolveValueTree() 의 단일 책임 분리 버전입니다.
  */
+
+
+
 public class AstExpressionTreeValueResolver {
 
     private final RepoMetaRegistry repoMetaRegistry;
@@ -24,6 +27,11 @@ public class AstExpressionTreeValueResolver {
     public String resolve(ExpressionTree expr, MapParamRegistry mapParamRegistry,
                           boolean quoteString, boolean resolveToColumn) {
         if (expr == null) return "";
+
+
+        LogPrinter.info("resolve expression: " + expr);
+
+
         try {
             if (expr instanceof MethodInvocationTree) {
                 return resolveMethodInvocation((MethodInvocationTree) expr, mapParamRegistry, resolveToColumn);
@@ -37,11 +45,16 @@ public class AstExpressionTreeValueResolver {
             if (expr instanceof IdentifierTree) {
                 return resolveIdentifier((IdentifierTree) expr, mapParamRegistry);
             }
+
+
         } catch (Exception e) {
-            LogPrinter.exceptionInfo(e);
+            LogPrinter.exceptionInfo( e);
+
         }
         return expr.toString().replace("\"", "");
     }
+
+
 
 
 
@@ -51,39 +64,46 @@ public class AstExpressionTreeValueResolver {
 
     private String resolveMethodInvocation(MethodInvocationTree mCall,
                                            MapParamRegistry mapParamRegistry, boolean resolveToColumn) {
-        String name = AstMethodTreeUtil.getMethodName(mCall);
-        List<? extends ExpressionTree> args = mCall.getArguments();
+        try {
+            String name = AstMethodTreeUtil.getMethodName(mCall);
+            List<? extends ExpressionTree> args = mCall.getArguments();
+            LogPrinter.info("[Args AstExpressionTreeValueResolver] " + args.toString());
 
-        switch (name) {
-            case "raw":
-                return args.isEmpty() ? "" : resolve(args.get(0), mapParamRegistry, false, resolveToColumn);
+            switch (name) {
+                case "r":
 
-            case "quoted": {
-                String inner = resolveInner(args, mapParamRegistry, resolveToColumn);
-                return "'" + inner + "'";
+                    return args.isEmpty() ? "" : resolve(args.get(0), mapParamRegistry, false, resolveToColumn);
+
+                case "q": {
+                    String inner = resolveInner(args, mapParamRegistry, resolveToColumn);
+                    return "'" + inner + "'";
+                }
+                case "b": {
+                    String inner = resolveInner(args, mapParamRegistry, resolveToColumn);
+                    return "#{" + inner + "}";
+                }
+                case "as": {
+                    ExpressionTree methodSel = mCall.getMethodSelect();
+                    if (!(methodSel instanceof MemberSelectTree)) return "";
+                    ExpressionTree scope = ((MemberSelectTree) methodSel).getExpression();
+                    return resolve(scope, mapParamRegistry, false, true)
+                            + " AS "
+                            + resolve(args.get(0), mapParamRegistry, false, true);
+                }
+                case "col": {
+                    if (args.size() < 2) return "";
+                    String alias = resolve(args.get(0), mapParamRegistry, false, true);
+                    String field = resolve(args.get(1), mapParamRegistry, false, resolveToColumn);
+                    LogPrinter.info("[joinNode] alias=" + alias + " field=" + field);
+                    return alias + "." + field;
+                }
+                default:
+                    return "";
             }
-            case "bind": {
-                String inner = resolveInner(args, mapParamRegistry, resolveToColumn);
-                return "#{" + inner + "}";
-            }
-            case "as": {
-                ExpressionTree methodSel = mCall.getMethodSelect();
-                if (!(methodSel instanceof MemberSelectTree)) return "";
-                ExpressionTree scope = ((MemberSelectTree) methodSel).getExpression();
-                return resolve(scope, mapParamRegistry, false, true)
-                        + " AS "
-                        + resolve(args.get(0), mapParamRegistry, false, true);
-            }
-            case "col": {
-                if (args.size() < 2) return "";
-                String alias = resolve(args.get(0), mapParamRegistry, false, true);
-                String field = resolve(args.get(1), mapParamRegistry, false, resolveToColumn);
-                LogPrinter.info("[joinNode] alias=" + alias + " field=" + field);
-                return alias + "." + field;
-            }
-            default:
-                return "";
+        }catch (Exception e) {
+            LogPrinter.exceptionInfo(e);
         }
+        return "";
     }
 
     private String resolveInner(java.util.List<? extends ExpressionTree> args,
@@ -110,6 +130,9 @@ public class AstExpressionTreeValueResolver {
             return className + "::" + methodName;
         }
 
+
+
+
         EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(className);
         if (entityMeta != null) {
             String columnName = entityMeta.getColumn(fieldName);
@@ -119,12 +142,20 @@ public class AstExpressionTreeValueResolver {
     }
 
     private String resolveIdentifier(IdentifierTree idTree, MapParamRegistry mapParamRegistry) {
-        String name = idTree.getName().toString();
-        LogPrinter.info("[3] IdentifierTree name=" + name + " argContext keys=" + mapParamRegistry);
+        try {
 
-        if (mapParamRegistry.has(name))     return mapParamRegistry.get(name);
-        if (mapParamRegistry.isParam(name)) return "#{" + name + "}";
-        if (mapParamRegistry.hasAlias(name)) return mapParamRegistry.getAlias(name);
-        return name;
+            String name = idTree.getName().toString();
+            LogPrinter.info("[3] IdentifierTree name=" + name + " argContext keys=" + mapParamRegistry);
+
+
+            if (mapParamRegistry.has(name)) return mapParamRegistry.get(name);
+
+            if (mapParamRegistry.isParam(name)) return "#{" + name + "}";
+            if (mapParamRegistry.hasAlias(name)) return mapParamRegistry.getAlias(name);
+            return name;
+        }catch (Exception e) {
+            LogPrinter.exceptionInfo(e);
+        }
+        return null;
     }
 }
