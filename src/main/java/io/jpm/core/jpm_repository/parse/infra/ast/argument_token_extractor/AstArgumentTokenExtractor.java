@@ -1,11 +1,12 @@
 package io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor;
 
 import com.sun.source.tree.*;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.domain.vo.ValueType;
-import io.jpm.core.jpm_repository.parse.domain.vo.MethodMeta;
-import io.jpm.core.jpm_repository.parse.infra.ast.AstExpressionTreeValueResolver;
-import io.jpm.core.jpm_repository.parse.infra.ast.AstMethodTreeUtil;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.enums.ValueType;
+import io.jpm.core.jpm_repository.domain.model.MethodMeta;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractorValueResolver;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.AstMethodTree;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.AstTypeInferrerUtil;
 import io.jpm.core.jpm_repository.valid.policy.ArgValidatorPolicy;
 import io.jpm.common.utils.LogPrinter;
 
@@ -22,18 +23,18 @@ public class AstArgumentTokenExtractor {
 
     private static final List<String> CONDITION_COMMANDS = Arrays.asList("where", "and", "or");
 
-    private final AstExpressionTreeValueResolver valueResolver;
+    private final ArgumentTokenExtractorValueResolver valueResolver;
     private final ArgValidatorPolicy validator;
-    public AstArgumentTokenExtractor(AstExpressionTreeValueResolver valueResolver) {
+    public AstArgumentTokenExtractor(ArgumentTokenExtractorValueResolver valueResolver) {
         this.valueResolver = valueResolver;
 
         this.validator = new ArgValidatorPolicy();
     }
 
-    public List<String> extract(MethodInvocationTree call, MapParamRegistry mapParamRegistry, MethodMeta methodMeta) {
+    public List<String> extract(MethodInvocationTree call, MapParamRegistryImpl mapParamRegistryImpl, MethodMeta methodMeta) {
         try {
             List<String> result = new ArrayList<>();
-            String command = AstMethodTreeUtil.getMethodName(call);
+            String command = AstMethodTree.getMethodName(call);
             boolean isCondition = CONDITION_COMMANDS.contains(command);
 
             List<? extends ExpressionTree> arguments = call.getArguments();
@@ -48,7 +49,7 @@ public class AstArgumentTokenExtractor {
                     if (lambda.getBody() instanceof MethodInvocationTree) {
                         MethodInvocationTree lambdaCall = (MethodInvocationTree) lambda.getBody();
                         for (ExpressionTree lambdaArg : lambdaCall.getArguments()) {
-                            String resolved = valueResolver.resolve(lambdaArg, mapParamRegistry, false, false);
+                            String resolved = valueResolver.resolve(lambdaArg, mapParamRegistryImpl, false, false);
                             result.add(resolved != null ? resolved : "");
                         }
                     }
@@ -60,12 +61,12 @@ public class AstArgumentTokenExtractor {
 
                 boolean quoteString = isCondition && i == 2;
 
-                String firstColumn = valueResolver.resolve(arguments.get(0), mapParamRegistry, false, false);
+                String firstColumn = valueResolver.resolve(arguments.get(0), mapParamRegistryImpl, false, false);
                 validator.saveFirstArgInfoIfMatched(firstColumn, command, i);
 
                 ValueType valueType = validator.validateArgIfMatched(i, inferLiteralType(arg, command));
 
-                String resolved = valueResolver.resolve(arg, mapParamRegistry, quoteString, false);
+                String resolved = valueResolver.resolve(arg, mapParamRegistryImpl, quoteString, false);
 
                 if(valueType != null) {
                     if(valueType.equals(ValueType.QUOTED)) {resolved = "'" + resolved + "'";}
@@ -87,7 +88,7 @@ public class AstArgumentTokenExtractor {
         if (!(conditionVal instanceof LiteralTree)) return null;
 
 
-        return  AstTypeInferrer.inferFromLiteralValue(((LiteralTree) conditionVal).getValue(), command);
+        return  AstTypeInferrerUtil.inferFromLiteralValue(((LiteralTree) conditionVal).getValue(), command);
 
 
     }

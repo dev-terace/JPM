@@ -2,16 +2,14 @@ package io.jpm.config;
 
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
 import io.jpm.common.exception.cache.infra.SourceLocationCacheImpl;
-import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.m_entity.dialect.MySqlDialect;
 import io.jpm.core.m_entity.dialect.PostgreSqlDialect;
 import io.jpm.core.m_entity.dialect.SqlDialect;
-import io.jpm.core.jpm_repository.parse.domain.policy.sql_mapper_binder.SqlMapperBinder;
-import io.jpm.core.jpm_repository.parse.domain.policy.sql_mapper_binder.SqlMapperBinderImplV2;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
-import io.jpm.core.jpm_repository.parse.infra.RepoMetaRegistryImpl;
-import io.jpm.core.jpm_repository.parse.infra.RepoRelationRegistryImpl;
+import io.jpm.core.jpm_repository.steps.write_dml_handler.core.sql_mapper_binder.SqlMapperBinder;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
+import io.jpm.core.jpm_repository.domain.cache.RepoMetaRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.RepoRelationRegistryImpl;
 
 import java.util.Map;
 

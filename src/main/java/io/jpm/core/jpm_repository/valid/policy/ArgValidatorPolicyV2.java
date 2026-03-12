@@ -4,12 +4,11 @@ import io.jpm.common.exception.ErrorCode;
 
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
-import io.jpm.config.AppConfig;
 import io.jpm.config.ast.BuildTimeMetadataCache;
-import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
-import io.jpm.core.jpm_repository.parse.domain.vo.ValueType;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.model.EntityMeta;
+import io.jpm.core.jpm_repository.domain.enums.ValueType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -50,8 +49,9 @@ public class ArgValidatorPolicyV2 {
     // ==========================================
     public ValueType validateArgIfMatched(int argIndex, String conditionValType) {
 
-        LogPrinter.info("conditionValType : " + conditionValType);
+//        LogPrinter.info("conditionValType : " + conditionValType);
         if (!isValidateArgIfMatched(argIndex)) return null;
+/*        LogPrinter.info("argIndex : " + argIndex);*/
         if (shouldSkipValidation(conditionValType)) return null;
 
         return validateLiteralTypeTree(firstArgInfoTemp, conditionValType);
@@ -134,6 +134,8 @@ public class ArgValidatorPolicyV2 {
 
     private String fetchRawFieldType(String entityName, String fieldName) {
         EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(entityName);
+
+        if(entityMeta == null) throw new IllegalArgumentException("entityName " + entityName + " not found");
         return (entityMeta != null) ? entityMeta.getFieldType(fieldName) : null;
     }
 

@@ -2,13 +2,13 @@ package io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc;
 
 import io.jpm.api.MqAssociation;
 import io.jpm.api.MqCollection;
-import io.jpm.core.jpm_repository.parse.domain.vo.DslStatement;
-import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
-import io.jpm.core.jpm_repository.parse.domain.vo.MapJoinMeta;
-import io.jpm.core.jpm_repository.parse.domain.vo.MethodMeta;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.infra.utils.MethodRefUtil;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.model.DslStatement;
+import io.jpm.core.jpm_repository.domain.model.EntityMeta;
+import io.jpm.core.jpm_repository.domain.model.MapJoinMeta;
+import io.jpm.core.jpm_repository.domain.model.MethodMeta;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.MethodRefUtil;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicy;
 import io.jpm.common.utils.LogPrinter;
 
@@ -39,7 +39,7 @@ public class AstDslCommandProc {
     }
 
     public void process(String command, List<String> rawArgs,
-                        MethodMeta methodMeta, MapParamRegistry mapParamRegistry) {
+                        MethodMeta methodMeta, MapParamRegistryImpl mapParamRegistryImpl) {
         if ("mapJoin".equals(command)) {
             processMapJoin(rawArgs, methodMeta);
         } else if (JOIN_COMMANDS.contains(command)) {

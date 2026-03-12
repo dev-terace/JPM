@@ -55,39 +55,31 @@ public class JpmArchitectureCheckTask extends DefaultTask {
         JavaClasses importedClasses =
                 new ClassFileImporter().importPaths(paths);
 
-        packageAccessRule(paths).check(importedClasses);
+
         fieldEncapsulationRule(paths).check(importedClasses);
         getterNamingRule(paths).check(importedClasses);
+        checkAnnotatedClassNotInDefaultPackage(importedClasses, paths);
 
     }
 
     // ──────────────────────────────────────────────
     // Rule 1: Package Access Control
     // ──────────────────────────────────────────────
-    private ArchRule packageAccessRule(List<Path> classesPaths) {
-        return classes()
-                .that().resideOutsideOfPackages(INTERNAL_PACKAGES)
-                .should(new ArchCondition<JavaClass>("not access internal JPM packages") {
-                    @Override
-                    public void check(JavaClass item, ConditionEvents events) {
-                        item.getDirectDependenciesFromSelf().stream()
-                                .filter(dep -> isForbiddenPackage(dep.getTargetClass().getPackageName()))
-                                .filter(dep -> dep.getSourceCodeLocation().getLineNumber() > 0)
-                                .forEach(dep -> {
-                                    int line = dep.getOriginClass().getSourceCodeLocation().getLineNumber();
-
-                                    String absolutePath = resolveAbsoluteSourcePath(
-                                            dep.getOriginClass(), classesPaths
-                                    );
-
-                                    String description = String.format(
-                                            ErrorCode.PACKAGE_NOT_ACCESSIBLE.getMessage(),
-                                            dep.getTargetClass().getPackageName());
-                                    String buildReport = buildReport(ErrorCode.PACKAGE_NOT_ACCESSIBLE.getCode(), description, absolutePath, line);
-                                    events.add(SimpleConditionEvent.violated(dep, buildReport));
-                                });
-                    }
-                });
+    private void checkAnnotatedClassNotInDefaultPackage(JavaClasses importedClasses, List<Path> paths) {
+        for (JavaClass item : importedClasses) {
+            if (item.getPackageName().isEmpty() && !item.getAnnotations().isEmpty()) {
+                String absolutePath = resolveAbsoluteSourcePath(item, paths);
+                String description = String.format(
+                        ErrorCode.ANNOTATION_DEFAULT_PACKAGE_FORBIDDEN.getMessage(),
+                        item.getSimpleName()
+                );
+                String report = buildReport(
+                        ErrorCode.ANNOTATION_DEFAULT_PACKAGE_FORBIDDEN.getCode(),
+                        description, absolutePath, 1
+                );
+                throw new RuntimeException(report);
+            }
+        }
     }
 
 
@@ -270,4 +262,12 @@ public class JpmArchitectureCheckTask extends DefaultTask {
         if (name == null || name.isEmpty()) return name;
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
+
+
+
+
+    // ──────────────────────────────────────────────
+// Rule 4: Annotation Default Package 금지
+// ──────────────────────────────────────────────
+
 }

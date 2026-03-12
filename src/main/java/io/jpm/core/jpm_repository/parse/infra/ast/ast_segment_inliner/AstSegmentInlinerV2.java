@@ -2,14 +2,13 @@ package io.jpm.core.jpm_repository.parse.infra.ast.ast_segment_inliner;
 
 import com.sun.source.tree.*;
 import io.jpm.config.ast.AstContext;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.domain.vo.MethodMeta;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProc;
-import io.jpm.core.jpm_repository.parse.infra.ast.AstMethodTreeUtil;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.model.MethodMeta;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.AstMethodTree;
 import io.jpm.common.utils.LogPrinter;
-import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstArgumentTokenExtractorV2;
-import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProcV2;
 
 import javax.lang.model.element.TypeElement;
 import java.util.Arrays;
@@ -20,16 +19,17 @@ import java.util.Set;
  * 세그먼트(Segment) 클래스의 특정 메서드를 현재 MethodMeta 에 인라인합니다.
  * 기존 inlineSegmentMethodTree() 의 단일 책임 분리 버전입니다.
  */
+@Deprecated
 public class AstSegmentInlinerV2 {
 
     private final RepoMetaRegistry repoMetaRegistry;
-    private final AstArgumentTokenExtractorV2 tokenExtractor;
-    private final AstDslCommandProcV2 commandProcessor;
+    private final ArgumentTokenExtractor tokenExtractor;
+    private final DslCommandProcessor commandProcessor;
     private final Set<String> dslKeywords;
 
     public AstSegmentInlinerV2(RepoMetaRegistry repoMetaRegistry,
-                             AstArgumentTokenExtractorV2 tokenExtractor,
-                             AstDslCommandProcV2 commandProcessor,
+                             ArgumentTokenExtractor tokenExtractor,
+                             DslCommandProcessor commandProcessor,
                              Set<String> dslKeywords) {
         this.repoMetaRegistry = repoMetaRegistry;
         this.tokenExtractor     = tokenExtractor;
@@ -56,16 +56,16 @@ public class AstSegmentInlinerV2 {
             MethodTree methodTree = (MethodTree) member;
             if (!methodTree.getName().toString().equals(segmentMethodName)) continue;
 
-            MapParamRegistry mapParamRegistry = buildArgContext(methodTree, passedArgs);
-            processBody(methodTree.getBody(), mapParamRegistry, methodMeta);
+            MapParamRegistryImpl mapParamRegistryImpl = buildArgContext(methodTree, passedArgs);
+            processBody(methodTree.getBody(), mapParamRegistryImpl, methodMeta);
             break;
         }
     }
 
     // -------------------------------------------------------------------------
 
-    private MapParamRegistry buildArgContext(MethodTree methodTree, List<String> passedArgs) {
-        MapParamRegistry ctx = new MapParamRegistry();
+    private MapParamRegistryImpl buildArgContext(MethodTree methodTree, List<String> passedArgs) {
+        MapParamRegistryImpl ctx = new MapParamRegistryImpl();
         List<? extends VariableTree> params = methodTree.getParameters();
         for (int i = 0; i < params.size() && i < passedArgs.size(); i++) {
 
@@ -83,15 +83,15 @@ public class AstSegmentInlinerV2 {
         return ctx;
     }
 
-    private void processBody(BlockTree body, MapParamRegistry mapParamRegistry, MethodMeta methodMeta) {
+    private void processBody(BlockTree body, MapParamRegistryImpl mapParamRegistryImpl, MethodMeta methodMeta) {
         if (body == null) return;
         for (StatementTree stmt : body.getStatements()) {
             if (!(stmt instanceof ExpressionStatementTree)) continue;
             ExpressionTree expr = ((ExpressionStatementTree) stmt).getExpression();
-            for (MethodInvocationTree call : AstMethodTreeUtil.flattenChain(expr)) {
-                String command = AstMethodTreeUtil.getMethodName(call);
+            for (MethodInvocationTree call : AstMethodTree.flattenChain(expr)) {
+                String command = AstMethodTree.getMethodName(call);
                 if (dslKeywords.contains(command)) {
-                    List<String> rawArgs = tokenExtractor.extract(call, mapParamRegistry);
+                    List<String> rawArgs = tokenExtractor.extract(call, mapParamRegistryImpl);
                     commandProcessor.process(command, rawArgs, methodMeta);
                 }
             }

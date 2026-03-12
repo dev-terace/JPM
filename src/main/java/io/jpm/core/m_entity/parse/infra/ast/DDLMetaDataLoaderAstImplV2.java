@@ -1,29 +1,6 @@
 package io.jpm.core.m_entity.parse.infra.ast;
 
 
-
-import io.jpm.api.MEntity;
-import com.sun.source.util.Trees;
-import io.jpm.api.MField;
-import io.jpm.core.m_entity.generator.domain.vo.DDLTableMetadata;
-import io.jpm.core.m_entity.parse.domain.ast.DDLMetaDataLoader;
-import io.jpm.core.m_entity.parse.domain.vo.MEntityInfo;
-import io.jpm.core.m_entity.parse.domain.policy.TableMetadataFactory;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.*;
-import javax.lang.model.util.ElementFilter;
-import javax.tools.Diagnostic;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-
-
 @Deprecated
 public class DDLMetaDataLoaderAstImplV2  {
 /*

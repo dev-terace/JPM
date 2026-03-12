@@ -3,16 +3,13 @@ package io.jpm.common.exception.config;
 import com.sun.source.tree.*;
 
 import com.sun.source.util.TreePathScanner;
-import io.jpm.config.AppConfig;
 import io.jpm.common.exception.cache.domain.vo.ChainSourceLocation;
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
 import io.jpm.common.utils.LogPrinter;
-import io.jpm.core.jpm_repository.parse.domain.vo.DSLKeywords;
+import io.jpm.core.jpm_repository.domain.model.DSLKeywords;
 
 import javax.lang.model.element.Element;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 

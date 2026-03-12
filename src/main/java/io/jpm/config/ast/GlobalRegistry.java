@@ -1,14 +1,13 @@
 package io.jpm.config.ast;
 
-import com.sun.source.util.Trees;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
-import io.jpm.config.AppConfig;
 import io.jpm.config.AutoDDLPolicy;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstArgumentTokenExtractorV2;
-import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProcV2;
-import io.jpm.core.jpm_repository.parse.infra.ast.ast_segment_inliner.AstSegmentInlinerV3;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInliner;
+import io.jpm.core.jpm_repository.handler.find_repo_meta_handler.FindRepoMetaValidProc;
 import org.immutables.value.Value;
 
 import java.util.Map;
@@ -35,12 +34,12 @@ public abstract class GlobalRegistry {
     }
 
     // 기존 필드들
-    public abstract AstArgumentTokenExtractorV2 tokenExtractor();
-    public abstract AstDslCommandProcV2 commandProcessor();
-    public abstract MapParamRegistry mapParamRegistry();
-    public abstract AstSegmentInlinerV3 segmentInliner();
+    public abstract ArgumentTokenExtractor tokenExtractor();
+    public abstract DslCommandProcessor commandProcessor();
+    public abstract MapParamRegistryImpl mapParamRegistry();
+    public abstract SegmentInliner segmentInliner();
     public abstract ErrorTracker errorTracker();
-
+    public abstract FindRepoMetaValidProc findRepoMetaValidProc();
 
     // AppConfig 초기화는 빌드 후 별도 호
 }

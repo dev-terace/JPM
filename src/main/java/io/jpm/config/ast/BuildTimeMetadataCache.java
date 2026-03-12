@@ -1,15 +1,13 @@
 package io.jpm.config.ast;
 
 import io.jpm.api.MField;
-import io.jpm.common.exception.ErrorTracker;
-import io.jpm.common.exception.ErrorTrackerImpl;
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
 import io.jpm.common.exception.cache.infra.SourceLocationCacheImpl;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.infra.RepoMetaRegistryImpl;
-import io.jpm.core.jpm_repository.parse.infra.RepoRelationRegistryImpl;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.RepoMetaRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.RepoRelationRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.core.m_entity.parse.domain.vo.MEntityInfo;
 
 import java.util.HashMap;
@@ -31,18 +29,18 @@ public class BuildTimeMetadataCache {
     private final SourceLocationCache sourceLocationCache;
 
 
-    private final MapParamRegistry mapParamRegistry;
+    private final MapParamRegistryImpl mapParamRegistryImpl;
     // 생성자에서 의존성 초기화 (AppConfig 사용)
     public BuildTimeMetadataCache() {
         this.repoMetaRegistry = new RepoMetaRegistryImpl();
         this.relationRegistry = new RepoRelationRegistryImpl();
         this.sourceLocationCache = new SourceLocationCacheImpl();
-        this.mapParamRegistry = new MapParamRegistry();
+        this.mapParamRegistryImpl = new MapParamRegistryImpl();
     }
 
 
-    public MapParamRegistry getMapParamRegistry() {
-        return mapParamRegistry;
+    public MapParamRegistryImpl getMapParamRegistry() {
+        return mapParamRegistryImpl;
     }
 
 

@@ -5,14 +5,14 @@ import com.sun.source.tree.*;
 import com.sun.source.util.Trees;
 
 import io.jpm.common.exception.ErrorCollector;
-import io.jpm.core.jpm_repository.parse.domain.vo.DSLKeywords;
-import io.jpm.core.jpm_repository.parse.domain.vo.MethodMeta;
-import io.jpm.core.jpm_repository.parse.domain.vo.RepoMeta;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.model.DSLKeywords;
+import io.jpm.core.jpm_repository.domain.model.MethodMeta;
+import io.jpm.core.jpm_repository.domain.model.RepoMeta;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProc;
-import io.jpm.core.jpm_repository.parse.infra.ast.AstExpressionTreeValueResolver;
-import io.jpm.core.jpm_repository.parse.infra.ast.AstMethodTreeUtil;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractorValueResolver;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.AstMethodTree;
 import io.jpm.core.jpm_repository.parse.infra.ast.ast_segment_inliner.AstSegmentInliner;
 import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstArgumentTokenExtractor;
 import io.jpm.common.utils.LogPrinter;
@@ -32,7 +32,7 @@ public class AstRepoParserHandlerV3Impl {
     // 협력 객체들
     // -------------------------------------------------------------------------
     private final RepoMetaRegistry repoMetaRegistry;
-    private final AstExpressionTreeValueResolver valueResolver;
+    private final ArgumentTokenExtractorValueResolver valueResolver;
     private final AstArgumentTokenExtractor tokenExtractor;
     private final AstDslCommandProc commandProcessor;
     private final AstSegmentInliner astSegmentInliner;
@@ -42,7 +42,7 @@ public class AstRepoParserHandlerV3Impl {
     // -------------------------------------------------------------------------
     public AstRepoParserHandlerV3Impl(RepoMetaRegistry repoMetaRegistry) {
         this.repoMetaRegistry = repoMetaRegistry;
-        this.valueResolver      = new AstExpressionTreeValueResolver(repoMetaRegistry);
+        this.valueResolver      = new ArgumentTokenExtractorValueResolver(repoMetaRegistry);
         this.tokenExtractor     = new AstArgumentTokenExtractor(valueResolver);
         this.commandProcessor   = new AstDslCommandProc(repoMetaRegistry);
         this.astSegmentInliner = new AstSegmentInliner(repoMetaRegistry, tokenExtractor,
@@ -89,7 +89,7 @@ public class AstRepoParserHandlerV3Impl {
     private MethodMeta parseMethod(MethodTree methodTree, String className,
                                    ProcessingEnvironment env, Trees trees) {
         MethodMeta methodMeta = new MethodMeta(methodTree.getName().toString());
-        MapParamRegistry mapParamRegistry = new MapParamRegistry();
+        MapParamRegistryImpl mapParamRegistryImpl = new MapParamRegistryImpl();
 
 
 
@@ -99,7 +99,7 @@ public class AstRepoParserHandlerV3Impl {
             String paramName = param.getName().toString();
             String paramType = param.getType().toString();
             methodMeta.addParameter(paramName, paramType);
-            mapParamRegistry.registerParam(paramName, paramType);
+            mapParamRegistryImpl.registerParam(paramName, paramType);
         }
 
         // 바디 파싱
@@ -108,7 +108,7 @@ public class AstRepoParserHandlerV3Impl {
             for (StatementTree stmt : body.getStatements()) {
                 if (stmt instanceof ExpressionStatementTree) {
                     ExpressionTree expr = ((ExpressionStatementTree) stmt).getExpression();
-                    parseChain(expr, className, methodMeta, mapParamRegistry, env, trees);
+                    parseChain(expr, className, methodMeta, mapParamRegistryImpl, env, trees);
                 }
             }
         }
@@ -121,24 +121,24 @@ public class AstRepoParserHandlerV3Impl {
 
     /** 체이닝된 DSL 호출을 순서대로 처리합니다. */
     private void parseChain(ExpressionTree expr, String className,
-                            MethodMeta methodMeta, MapParamRegistry mapParamRegistry,
+                            MethodMeta methodMeta, MapParamRegistryImpl mapParamRegistryImpl,
                             ProcessingEnvironment env, Trees trees) {
 
-        for (MethodInvocationTree call : AstMethodTreeUtil.flattenChain(expr)) {
-            String command   = AstMethodTreeUtil.getMethodName(call);
+        for (MethodInvocationTree call : AstMethodTree.flattenChain(expr)) {
+            String command   = AstMethodTree.getMethodName(call);
             ErrorCollector.setMethodName(methodMeta.getMethodName());
-            String scopeName = AstMethodTreeUtil.getScopeName(call);
+            String scopeName = AstMethodTree.getScopeName(call);
 
 
 
 
             if (DSL_KEYWORDS.contains(command)) {
-                List<String> rawArgs = tokenExtractor.extract(call, mapParamRegistry, methodMeta);
+                List<String> rawArgs = tokenExtractor.extract(call, mapParamRegistryImpl, methodMeta);
 
-                commandProcessor.process(command, rawArgs, methodMeta, mapParamRegistry);
+                commandProcessor.process(command, rawArgs, methodMeta, mapParamRegistryImpl);
 
             } else if (isSegmentCall(scopeName)) {
-                List<String> passedArgs = tokenExtractor.extract(call, mapParamRegistry, methodMeta);
+                List<String> passedArgs = tokenExtractor.extract(call, mapParamRegistryImpl, methodMeta);
 
 
                 String segmentFqcn = repoMetaRegistry.getSegmentPath(className, scopeName);

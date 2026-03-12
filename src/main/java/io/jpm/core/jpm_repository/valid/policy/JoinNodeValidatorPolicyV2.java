@@ -1,17 +1,13 @@
 package io.jpm.core.jpm_repository.valid.policy;
 
 import io.jpm.common.exception.ErrorTracker;
-import io.jpm.config.AppConfig;
 import io.jpm.common.exception.ErrorCode;
-import io.jpm.common.exception.ErrorCollector;
 import io.jpm.config.ast.BuildTimeMetadataCache;
-import io.jpm.config.ast.GlobalRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
-import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
-import io.jpm.core.jpm_repository.generator.infra.utils.ColumnResolver;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
+import io.jpm.core.jpm_repository.domain.model.EntityMeta;
+import io.jpm.core.jpm_repository.utils.ColumnResolver;
 import io.jpm.core.jpm_repository.valid.domain.ValidateFkTypeMatchVO;
-import io.jpm.common.utils.LogPrinter;
 
 import java.util.Objects;
 
@@ -48,8 +44,8 @@ public class JoinNodeValidatorPolicyV2 {
 
         String leftFieldType = leftColMeta.getFieldType(leftFieldName);
         String rightFieldType = rightColMeta.getFieldType(rightFieldName);
-        LogPrinter.info("leftFieldName: " + leftFieldName);
-        LogPrinter.info("rightFieldName: " + rightFieldName);
+/*        LogPrinter.info("leftFieldName: " + leftFieldName);
+        LogPrinter.info("rightFieldName: " + rightFieldName);*/
 
 
         validateFkTypeMatch(ValidateFkTypeMatchVO.builder()

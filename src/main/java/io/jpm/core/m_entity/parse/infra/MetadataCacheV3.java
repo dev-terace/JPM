@@ -6,8 +6,8 @@ import io.jpm.api.MFieldType;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.core.m_entity.parse.domain.policy.MObjectFactoryV2;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.m_entity.parse.infra.ast.AstMFieldParserV2; // 🚀 V2: Tree API 유틸 사용
 import io.jpm.core.m_entity.parse.domain.vo.MEntityInfo;

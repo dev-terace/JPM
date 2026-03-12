@@ -25,8 +25,9 @@ public enum ErrorCode {
 
     // 논리 제약 및 타입 미스매치
     UNIQUE_BOOLEAN_INVALID("LOGIC-001", "Unique constraint on Boolean is meaningless"),
-    DEFAULT_VALUE_MISMATCH("TYPE-001", "Default value does not match the field type");
+    DEFAULT_VALUE_MISMATCH("TYPE-001", "Default value does not match the field type"),
 
+    ANNOTATION_DEFAULT_PACKAGE_FORBIDDEN("DEFAULT-PACKAGE", "JPM framework classes must not be in the default package");
 
 
 

@@ -3,15 +3,16 @@ package io.jpm.core.jpm_repository.valid.policy;
 import io.jpm.config.AppConfig;
 import io.jpm.common.exception.ErrorCode;
 import io.jpm.common.exception.ErrorCollector;
-import io.jpm.core.jpm_repository.parse.domain.cache.EntityRelationRegistry;
-import io.jpm.core.jpm_repository.parse.domain.vo.ValueType;
-import io.jpm.core.jpm_repository.parse.domain.vo.EntityMeta;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
+import io.jpm.core.jpm_repository.domain.enums.ValueType;
+import io.jpm.core.jpm_repository.domain.model.EntityMeta;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.common.utils.LogPrinter;
 
 import java.util.Arrays;
 import java.util.List;
 
+@Deprecated
 public class ArgValidatorPolicy {
 
     private static final RepoMetaRegistry repoMetaRegistry = AppConfig.getEntityMetaRegistry();

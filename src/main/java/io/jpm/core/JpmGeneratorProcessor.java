@@ -2,35 +2,34 @@ package io.jpm.core;
 
 import com.google.auto.service.AutoService;
 
-import groovy.util.logging.Log;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.exception.ErrorTrackerImpl;
 import io.jpm.config.AppConfig;
+import io.jpm.config.ast.AstContext;
 import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.config.ast.GlobalRegistry;
 
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.ImmutableGlobalRegistry;
 import io.jpm.core.jpm_data_source_registry.JpmDataSourceRegistry;
-import io.jpm.core.jpm_repository.parse.domain.cache.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.parse.domain.vo.DSLKeywords;
-import io.jpm.core.jpm_repository.parse.infra.MapParamRegistry;
-import io.jpm.core.jpm_repository.parse.infra.ast.AstExpressionTreeValueResolver;
-import io.jpm.core.jpm_repository.parse.infra.ast.argument_token_extractor.AstArgumentTokenExtractorV2;
-import io.jpm.core.jpm_repository.parse.infra.ast.ast_dsl_command_proc.AstDslCommandProcV2;
-import io.jpm.core.jpm_repository.parse.infra.ast.ast_segment_inliner.AstSegmentInlinerV3;
-import io.jpm.core.jpm_repository.processor.AstJpmRepositoryProcessorV2;
-import io.jpm.core.m_entity.processor.MEntityAstProcessorV2;
+import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.model.DSLKeywords;
+import io.jpm.core.jpm_repository.handler.find_repo_meta_handler.FindRepoMetaValidProc;
+import io.jpm.core.jpm_repository.pipeline.JpmRepositoryPipeline;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractorValueResolver;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInliner;
+import io.jpm.core.jpm_repository.utils.ColumnResolver;
+import io.jpm.core.m_entity.processor.MEntityPipelineV2;
 
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
 
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -118,9 +117,9 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
         }
         AppConfig.sqlDialectInit(processingEnv.getOptions());
 
-        MEntityAstProcessorV2 mEntityProc = new MEntityAstProcessorV2();
+        MEntityPipelineV2 mEntityProc = new MEntityPipelineV2();
         mEntityProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
-        AstJpmRepositoryProcessorV2 aRepoProc = new AstJpmRepositoryProcessorV2();
+        JpmRepositoryPipeline aRepoProc = new JpmRepositoryPipeline();
         aRepoProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
 
 
@@ -130,10 +129,9 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
         try {
             mEntityProc.execute();
             aRepoProc.execute();
-        } catch (IOException e) {
-            LogPrinter.exceptionInfo(e);
+
         } catch (Exception e) {
-            LogPrinter.exceptionInfo(e);
+
             throw new RuntimeException(e);
         }
 
@@ -148,8 +146,8 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
             RepoMetaRegistry repoMetaRegistry = cache.getRepoMetaRegistry();
 
             ErrorTracker errorTracker = new ErrorTrackerImpl(cache.getSourceLocationCache());
-            AstArgumentTokenExtractorV2 astArgumentTokenExtractorV2 = new AstArgumentTokenExtractorV2(new AstExpressionTreeValueResolver(repoMetaRegistry), cache, errorTracker);
-            AstDslCommandProcV2 commandProcV2 = new AstDslCommandProcV2(cache, errorTracker);
+            ArgumentTokenExtractor argumentTokenExtractor = new ArgumentTokenExtractor(new ArgumentTokenExtractorValueResolver(repoMetaRegistry), cache, errorTracker);
+            DslCommandProcessor commandProcV2 = new DslCommandProcessor(cache, errorTracker, argumentTokenExtractor);
 
 
             Map<String, String> safeOptions = processingEnv.getOptions().entrySet().stream()
@@ -159,10 +157,11 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
             return ImmutableGlobalRegistry.builder()
                     .options(safeOptions)
-                    .tokenExtractor(astArgumentTokenExtractorV2)
+                    .tokenExtractor(argumentTokenExtractor)
                     .commandProcessor(commandProcV2)
-                    .mapParamRegistry(new MapParamRegistry())
-                    .segmentInliner(new AstSegmentInlinerV3(repoMetaRegistry, astArgumentTokenExtractorV2, commandProcV2, DSLKeywords.getDSLKeywords()))
+                    .mapParamRegistry(new MapParamRegistryImpl())
+                    .findRepoMetaValidProc(new FindRepoMetaValidProc(cache, errorTracker, new ColumnResolver(cache.getRepoMetaRegistry())))
+                    .segmentInliner(new SegmentInliner(argumentTokenExtractor, commandProcV2, new AstContext(processingEnv), DSLKeywords.getDSLKeywords()))
                     .errorTracker(errorTracker)
                     .build();
 
