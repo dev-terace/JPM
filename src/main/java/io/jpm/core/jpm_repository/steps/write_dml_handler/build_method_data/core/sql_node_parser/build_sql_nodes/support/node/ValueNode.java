@@ -1,0 +1,41 @@
+package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node;
+
+
+import io.jpm.core.jpm_repository.domain.model.BuildContext;
+import io.jpm.core.jpm_repository.utils.ColumnResolver;
+
+public class ValueNode implements SqlNode {
+    private final String column;
+    private final String value;
+    private final ColumnResolver columnResolver;
+
+
+    public ValueNode(String column, String value, ColumnResolver columnResolver) {
+        this.column = column;
+        this.value = value;
+        this.columnResolver = columnResolver;
+    }
+
+    @Override
+    public void apply(BuildContext ctx) {
+
+
+        ctx.getInsertCols().add(columnResolver.resolve(column, ctx));
+        ctx.getInsertVals().add(formatValue(value));
+    }
+
+    @Override
+    public String toSql(BuildContext ctx) { return ""; }
+
+    private String formatValue(String s) {
+        if (s == null) return "NULL";
+        if (s.startsWith("'") && s.endsWith("'")) return s;
+        if (s.equals("?")) return s;
+        if (s.contains("#{")) return s;
+        if (s.equals("TRUE") || s.equals("FALSE")) return s;
+        if (s.matches("-?\\d+(\\.\\d+)?")) return s;
+        if (s.matches("-?\\d+[Ll]")) return s.replaceAll("(?i)L", "");
+
+        return "'" + s.replace("'", "''") + "'";
+    }
+}

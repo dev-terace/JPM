@@ -119,8 +119,9 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
         MEntityPipelineV2 mEntityProc = new MEntityPipelineV2();
         mEntityProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
-        JpmRepositoryPipeline aRepoProc = new JpmRepositoryPipeline();
-        aRepoProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
+        JpmRepositoryPipeline jRepoProc = new JpmRepositoryPipeline();
+        jRepoProc.init(processingEnv, roundEnv, buildTimeMetadataCache, globalRegistry);
+
 
 
 
@@ -128,7 +129,7 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
         try {
             mEntityProc.execute();
-            aRepoProc.execute();
+            jRepoProc.execute();
 
         } catch (Exception e) {
 

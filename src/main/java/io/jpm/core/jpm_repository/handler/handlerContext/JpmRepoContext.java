@@ -5,13 +5,14 @@ import io.jpm.common.exception.ErrorTrackerImpl;
 import io.jpm.common.exception.config.JpmChainExtractorScanner;
 import io.jpm.config.ast.AstContext;
 import io.jpm.config.ast.BuildTimeMetadataCache;
+import io.jpm.config.ast.Context;
 import io.jpm.config.ast.GlobalRegistry;
 import io.jpm.core.jpm_repository.domain.model.RepoMeta;
 
 import javax.annotation.processing.RoundEnvironment;
 import java.util.List;
 
-public class JpmRepoContext {
+public class JpmRepoContext implements Context {
 
     private List<RepoMeta> repoMetas;
     private final RoundEnvironment roundEnv;

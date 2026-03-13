@@ -168,8 +168,7 @@ public abstract class JpmAbstractQuerySegment {
     public <E, R> void whereInGroup(MFieldRef<E, R> fieldRef) {}
 
 
-    @Deprecated
-    public void fromGroup(Class<?> targetTable) {}
+
 
 
     // [수정] 양쪽 모두 메서드 참조 지원 (N중 조인을 위해 <L, R> 분리)

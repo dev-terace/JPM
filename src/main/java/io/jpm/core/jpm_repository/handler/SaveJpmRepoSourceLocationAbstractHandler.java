@@ -2,12 +2,12 @@ package io.jpm.core.jpm_repository.handler;
 
 import io.jpm.config.ast.*;
 import io.jpm.core.jpm_repository.handler.handlerContext.JpmRepoContext;
-import io.jpm.core.jpm_repository.steps.save_jpm_repo_source_location_handler.SaveSourceLocationStep;
+import io.jpm.core.jpm_repository.steps.save_jpm_repo_source_location_handler.SaveSourceLocationMainStep;
 
 
 public class SaveJpmRepoSourceLocationAbstractHandler implements AbstractHandler<JpmRepoContext> {
 
-    private final Step<JpmRepoContext> saveSourceLocationStep = new SaveSourceLocationStep();
+    private final Step<JpmRepoContext> saveSourceLocationStep = new SaveSourceLocationMainStep();
 
 
 

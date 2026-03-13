@@ -1,11 +1,12 @@
 package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context;
 
 import com.sun.source.tree.MethodTree;
+import io.jpm.config.ast.Context;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
 
 import javax.lang.model.element.TypeElement;
 
-public class MethodParseContext {
+public class MethodParseContext implements Context {
     private final TypeElement repoElement;
     private final MethodTree methodTree;
     private final MethodMeta methodMeta;

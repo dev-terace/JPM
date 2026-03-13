@@ -1,19 +1,8 @@
 package io.jpm.core.jpm_repository.handler.find_repo_meta_handler;
 
-import com.sun.source.tree.*;
-import com.sun.source.util.Trees;
-import io.jpm.api.JpmRepository;
 import io.jpm.config.ast.*;
-import io.jpm.core.jpm_repository.domain.model.RepoMeta;
 import io.jpm.core.jpm_repository.handler.handlerContext.JpmRepoContext;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.FindRepoMetaStep;
-
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.main.FindRepoMetaMainStep;
 
 
 //내일 할거
@@ -32,7 +21,7 @@ public class FindRepoMetaHandler implements AbstractHandler<JpmRepoContext> {
     @Override
     public void handle(JpmRepoContext context) throws Exception {
 
-        new FindRepoMetaStep(context.getGlobalRegistry(), context.getContext()).execute(context);
+        new FindRepoMetaMainStep(context.getGlobalRegistry(), context.getContext()).execute(context);
 
     }
 
