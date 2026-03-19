@@ -1,5 +1,6 @@
 package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node;
 
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
@@ -22,6 +23,7 @@ public class SelectNode implements SqlNode {
     public void apply(BuildContext ctx) {
         List<String> resolved = new ArrayList<>();
         for (String col : columns) {
+
             resolved.add(columnResolver.resolve(col, ctx));
         }
         ctx.setAction("SELECT");
@@ -33,46 +35,6 @@ public class SelectNode implements SqlNode {
         }
     }
 
-/*   private String resolveSelectColumn(String colStr, SqlMapperBinderImpl.BuildContext ctx) {
-
-        String[] aliasPart = colStr.split("\\.");
-        boolean aliasFound = aliasPart.length > 1;
-        String alias = aliasFound ? aliasPart[0] + "." : "";
-
-
-        if (colStr.contains("::")) {
-            String[] parts = colStr.split("::");
-            String className = parts[0].trim();
-            String methodName = parts[1].trim();
-            boolean needsPrefix = ctx.requiresPrefix || !ctx.joins.isEmpty();
-            return  alias + convertGetterToField(className, methodName, needsPrefix);
-        }
-
-        return colStr;
-    }
-
-    private static String convertGetterToField(String className, String methodName, boolean isPrefix) {
-        String fieldName;
-        if (methodName.startsWith("get") && methodName.length() > 3) {
-            fieldName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-        } else if (methodName.startsWith("is") && methodName.length() > 2) {
-            fieldName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
-        } else {
-            throw new RuntimeException("[convertGetterToField] 알 수 없는 메서드명: " + methodName);
-        }
-
-        if (!isPrefix) return fieldName;
-
-
-        LogPrinter.info("[SelectNode] class Name and method: "  + className + "." + methodName);
-
-        EntityMeta entityMeta = entityMetaRegistry.getEntityMeta(className);
-        String tableName = entityMetaRegistry.getTable(className);
-        if (entityMeta == null || tableName == null) return fieldName;
-
-        String colName = entityMeta.getColumn(fieldName);
-        return tableName + "." + (colName != null ? colName : fieldName);
-    }*/
 
 
     @Override public String toSql(BuildContext ctx) { return ""; }

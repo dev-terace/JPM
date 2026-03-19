@@ -20,4 +20,18 @@ public abstract class ErrorInfo {
     public static ImmutableErrorInfo.Builder builder() {
         return ImmutableErrorInfo.builder();
     }
+
+
+    @Override
+    public String toString() {
+        return "ErrorInfo{" +
+                "err=" + getErr() +
+                ", className='" + getClassName() + '\'' +
+                ", expression='" + getExpression() + '\'' +
+                ", methodName='" + getMethodName() + '\'' +
+                ", chainMethodName='" + getChainMethodName() + '\'' +
+                ", fieldName='" + getFieldName() + '\'' +
+                ", errorElement=" + (getErrorElement() != null ? getErrorElement().getSimpleName() : "null") +
+                '}';
+    }
 }

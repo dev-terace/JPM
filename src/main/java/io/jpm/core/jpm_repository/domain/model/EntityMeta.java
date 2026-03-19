@@ -69,4 +69,15 @@ public class EntityMeta {
     public Collection<String> getAllColumnNames() {
         return fieldToColumn.values();
     }
+
+
+    @Override
+    public String toString() {
+        return "EntityMeta{" +
+                "tableName='" + tableName + '\'' +
+                ", fieldToColumn=" + fieldToColumn +
+                ", fieldToType=" + fieldToType +
+                ", relationTargets=" + relationTargets +
+                '}';
+    }
 }

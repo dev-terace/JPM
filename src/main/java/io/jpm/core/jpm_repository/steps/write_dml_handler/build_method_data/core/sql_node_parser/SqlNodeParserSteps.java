@@ -28,8 +28,8 @@ public class SqlNodeParserSteps implements Step<SqlMapBinderContext> {
     private final RepoMetaRegistry repoMetaRegistry;
     public SqlNodeParserSteps(RepoMetaRegistry repoMetaRegistry,
                          ArgResolver argResolver,
-                         ColumnResolver columnResolver,
-                         CompositeSqlMapperBinderStep binder) {
+                         ColumnResolver columnResolver
+                      ) {
 
         this.repoMetaRegistry = repoMetaRegistry;
         aliasPreScannerSteps = new AliasPreScannerSteps(repoMetaRegistry);

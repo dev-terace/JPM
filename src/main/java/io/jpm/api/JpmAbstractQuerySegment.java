@@ -112,8 +112,10 @@ public abstract class JpmAbstractQuerySegment {
         // 파서에서 aliasedFields를 순회하며 "alias:MEntity::getMethod" 형태로 저장
     }
 
-    public void selectRaw(String... rawSqls) {}
-    public void selectRaw(Object... rawSqls) {}
+    public void selectRaw(String rawSqls) {}
+
+    @SafeVarargs
+    public final <E, R> void selectRaw(String rawSqls, MFieldRef<E, R>... fieldRefs) {}
 
     public void from(Class<?> entityClass) {}
     public void from(String table) {}

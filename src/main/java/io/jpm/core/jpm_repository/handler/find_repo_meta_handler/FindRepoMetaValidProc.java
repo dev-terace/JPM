@@ -4,6 +4,7 @@ import io.jpm.common.exception.ErrorCode;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.BuildTimeMetadataCache;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.MethodRefUtil;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
@@ -14,6 +15,8 @@ import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
 
 import java.util.Arrays;
 import java.util.List;
+
+
 
 public class FindRepoMetaValidProc {
 
@@ -36,15 +39,13 @@ public class FindRepoMetaValidProc {
     // ==========================================
     // Public API
     // ==========================================
-    public void validate(String className, String methodName, MethodMeta methodMeta) {
+    public void validate(MethodMeta methodMeta) {
 
 
 
-        LogPrinter.info("Validating " + className + "." + methodMeta.getMethodName());
+
         for (DslStatement stmt : methodMeta.getStatements()) {
 
-            errorTracker.setClassName(className.replace(".class", ""));
-            errorTracker.setMethodName(methodName);
             validateStatement(stmt);
         }
 
@@ -56,8 +57,10 @@ public class FindRepoMetaValidProc {
     // ==========================================
     private void validateStatement(DslStatement stmt) {
         String command = stmt.getCommand();
+
         errorTracker.setChainMethodName(command);
 
+        LogPrinter.info("Validating " + command);
         if (CONDITION_COMMANDS.contains(command)) {
             validateCondition(stmt);
         } else if (UPDATE_COMMANDS.contains(command)) {
@@ -126,11 +129,12 @@ public class FindRepoMetaValidProc {
     // arg(2) = "OrderItemEntity::getOrderId"
     // → JoinNodeValidatorPolicyV2에 위임
     // ==========================================
+
     private void validateJoin(DslStatement stmt) {
         String leftCol  = stmt.getArg(1);
         String rightCol = stmt.getArg(2);
         if (leftCol == null || rightCol == null) return;
-
+        LogPrinter.info("validateJoin leftCol: " + leftCol + ", rightCol: " + rightCol);
         joinValidator.validateJoinType(stmt.getCommand(), leftCol, rightCol);
     }
 
@@ -163,6 +167,7 @@ public class FindRepoMetaValidProc {
         if (rawType == null) return null;
 
         String normalized = normalizeFieldType(rawType);
+
         if ("FK".equals(normalized)) {
             return entityRelationRegistry.resolveFkType(entityName, fieldName);
         }
@@ -181,20 +186,18 @@ public class FindRepoMetaValidProc {
     }
 
     private void checkTypeMismatch(String fieldType, String valueType) {
+
+
+        LogPrinter.info("checkTypeMismatch: fieldType: " + fieldType + ", valueType: " + valueType);
         if ("LONG".equals(fieldType) && "INTEGER".equals(valueType)) return;
         if (!fieldType.equals(valueType)) {
+            LogPrinter.info("checkTypeMismatch: fieldType: " + fieldType + ", valueType: " + valueType + " chainMethodName " + errorTracker.getChainMethodName());
             errorTracker.addErrorInfo(ErrorCode.CONDITION_TYPE_MISMATCH);
         }
     }
 
     private String convertGetterToField(String methodName) {
-        if (methodName.startsWith("get") && methodName.length() > 3) {
-            return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-        }
-        if (methodName.startsWith("is") && methodName.length() > 2) {
-            return Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
-        }
-        return methodName;
+        return MethodRefUtil.convertGetterToField(methodName);
     }
 
     private String normalizeFieldType(String rawType) {

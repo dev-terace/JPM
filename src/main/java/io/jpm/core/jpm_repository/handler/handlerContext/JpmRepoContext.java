@@ -28,7 +28,7 @@ public class JpmRepoContext implements Context {
         this.context = context;
         this.globalRegistry = globalRegistry;
         this.jpmChainExtractorScanner = new JpmChainExtractorScanner(context.getJpmToolbox());
-        this.errorTracker = new ErrorTrackerImpl(cache.getSourceLocationCache());
+        this.errorTracker = globalRegistry.errorTracker();
     }
 
 

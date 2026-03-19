@@ -2,6 +2,7 @@ package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_meth
 
 import com.sun.source.tree.*;
 import io.jpm.common.exception.ErrorTracker;
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
 import io.jpm.config.ast.GlobalRegistry;
 import io.jpm.config.ast.Step;
@@ -51,9 +52,13 @@ public class ParseMethodBodyStep implements Step<MethodParseContext> {
 
         for (MethodInvocationTree call : AstMethodTree.flattenChain(expr)) {
             String command = AstMethodTree.getMethodName(call);
+
+
             errorTracker.setMethodName(methodMeta.getMethodName());
 
             if (isDslCommand(command)) {
+
+                errorTracker.setClassName(context.getRepoElement().getQualifiedName().toString());
                 dslCommandProcessor.execute(call, mapParamRegistry, methodMeta);
             } else if (!command.equals("super")) {
                 segmentInliner.execute(call, repoElement, mapParamRegistry, methodMeta);

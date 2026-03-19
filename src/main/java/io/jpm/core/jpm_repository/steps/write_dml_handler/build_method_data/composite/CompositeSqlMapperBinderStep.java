@@ -30,7 +30,7 @@ public class CompositeSqlMapperBinderStep implements CompositeStep<SqlMapBinderC
         ArgResolver argResolver  = new ArgResolver(repoMetaRegistry);
 
         steps = Collections.singletonList(
-                new SqlNodeParserSteps(repoMetaRegistry, argResolver, columnResolver, this)
+                new SqlNodeParserSteps(repoMetaRegistry, argResolver, columnResolver)
         );
 
 

@@ -45,6 +45,11 @@ public class RepoRelationRegistryImpl implements EntityRelationRegistry {
      * FK 필드 표현식 "Entity::fieldName" 을 파싱해서 parentEntity의 PK 타입과 비교
      */
     public String resolveFkType(String entityName, String fkFieldName) {
+
+        if(entityName.contains("."))
+        {
+            entityName = entityName.split("\\.")[1];
+        }
         Map<String, String> fkEntry = fkMap.get(entityName);
         if (fkEntry == null) {
             throw new RuntimeException("FK 정보 없음: entityName=" + entityName);

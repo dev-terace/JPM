@@ -24,8 +24,10 @@ public class SourceLocationCacheImpl implements SourceLocationCache {
 
     public ChainSourceLocation popChainSourceLocation(String className, String methodName, String chainMethodName) {
 
-        LogPrinter.info("chainSourceLocation : " + chainLocationMap);
+
+        LogPrinter.info("chain location map" + chainLocationMap.toString());
         List<ChainSourceLocation> locations = chainLocationMap.get(className).get(methodName);
+
 
         return popFromList(
                 locations,

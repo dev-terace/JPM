@@ -15,6 +15,7 @@ import io.jpm.core.jpm_repository.domain.model.RepoMeta;
 import io.jpm.core.jpm_repository.handler.handlerContext.JpmRepoContext;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.MethodParseContext;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.composite.CompositeParseMemberMethodStep;
+import io.jpm.core.jpm_repository.steps.write_dml_handler.ValidateErrorMainStep;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
@@ -28,6 +29,8 @@ public class FindRepoMetaMainStep implements Step<JpmRepoContext> {
 
     public FindRepoMetaMainStep(GlobalRegistry globalRegistry, AstContext astContext) {
         this.compositeParseMemberMethodStep = new CompositeParseMemberMethodStep(globalRegistry, astContext);
+
+
     }
 
     @Override
@@ -58,22 +61,21 @@ public class FindRepoMetaMainStep implements Step<JpmRepoContext> {
                 }
             }
 
-
             repoMetas.add(repoMeta);
         }
-
-
 
         context.setRepoMetas(repoMetas);
     }
 
 
     private RepoMeta buildRepoMeta(Element element, JpmRepoContext context) {
-        ErrorTracker errorTracker = context.getErrorTracker();
-        errorTracker.setClassName(element.getSimpleName().toString())
-                .setTrees(context.getContext().getTrees());
+
 
         TypeElement repoElement = (TypeElement) element;
+
+
+
+
         String className        = element.getSimpleName().toString();
         String namespace        = extractNamespace(repoElement, className);
 

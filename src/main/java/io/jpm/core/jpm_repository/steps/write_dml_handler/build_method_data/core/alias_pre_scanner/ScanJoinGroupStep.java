@@ -9,6 +9,8 @@ import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.cont
 import java.util.Arrays;
 import java.util.List;
 
+
+
 public class ScanJoinGroupStep implements Step<AliasScanContext> {
 
     private static final List<String> JOIN_GROUP_COMMANDS = Arrays.asList("innerJoinGroup", "leftJoinGroup");
@@ -18,19 +20,30 @@ public class ScanJoinGroupStep implements Step<AliasScanContext> {
         for (DslStatement stmt : ctx.getStatements()) {
             if (!JOIN_GROUP_COMMANDS.contains(stmt.getCommand())) continue;
             try {
-                if (stmt.getArgs().size() < 3) continue;
+                List<String> args = stmt.getArgs();
+                if (args.size() < 3) continue;
 
-                String     rawClass    = cleanClassName(stmt.getArgs().get(0));
+                // JoinGroupNode 생성자와 동일한 순서: [targetClass, leftCol, rightCol]
+                String rawClass  = cleanClassName(args.get(0));
+                String leftCol   = args.get(1);
+                String rightCol  = args.get(2);
+
+                // ── JoinGroupNode.toSql() alias 추출 로직과 동일 ──────────────
+                String alias = "sub";
+                if (leftCol.contains(".")) {
+                    alias = leftCol.split("\\.")[0];
+                } else if (rightCol.contains("|")) {
+                    alias = leftCol.split("\\|")[0];   // JoinGroupNode와 동일하게 leftCol 기준
+                }
+                // ─────────────────────────────────────────────────────────────
+
                 EntityMeta meta        = ctx.getRepoMetaRegistry().getEntityMeta(rawClass);
-                String     actualTable = meta != null ? meta.getTableName() : rawClass;
+                String     actualTable = (meta != null) ? meta.getTableName() : rawClass;
 
-                String explicitAlias = extractAliasFromRightCol(stmt.getArgs().get(2));
-                if (explicitAlias == null) explicitAlias = findPureLiteralAlias(stmt.getArgs());
-                String finalAlias = nonEmpty(explicitAlias, actualTable + "_sub");
+                ctx.getBuildContext().registerAlias(actualTable, alias);
+                ctx.getBuildContext().registerAlias(rawClass,    alias);
+                ctx.getBuildContext().registerAlias(alias,       actualTable);
 
-                ctx.getBuildContext().registerAlias(actualTable, finalAlias);
-                ctx.getBuildContext().registerAlias(rawClass,    finalAlias);
-                ctx.getBuildContext().registerAlias(finalAlias,  actualTable);
             } catch (Exception e) {
                 LogPrinter.exceptionInfo(e);
                 throw new RuntimeException(e);
@@ -38,26 +51,8 @@ public class ScanJoinGroupStep implements Step<AliasScanContext> {
         }
     }
 
-    private String extractAliasFromRightCol(String rightColArg) {
-        if (rightColArg.contains("|"))  return rightColArg.split("\\|")[0];
-        if (rightColArg.contains(".") && !rightColArg.contains("::")) return rightColArg.split("\\.")[0];
-        return null;
-    }
-
-    private String findPureLiteralAlias(List<String> args) {
-        for (int i = 1; i < args.size(); i++) {
-            String a = args.get(i);
-            if (!a.contains("::") && !a.endsWith(".class") && !a.contains("->")) return a;
-        }
-        return null;
-    }
-
     private String cleanClassName(String raw) {
         if (raw.startsWith("class ")) raw = raw.substring(raw.lastIndexOf('.') + 1);
         return raw.replace(".class", "");
-    }
-
-    private String nonEmpty(String candidate, String fallback) {
-        return (candidate != null && !candidate.trim().isEmpty()) ? candidate : fallback;
     }
 }

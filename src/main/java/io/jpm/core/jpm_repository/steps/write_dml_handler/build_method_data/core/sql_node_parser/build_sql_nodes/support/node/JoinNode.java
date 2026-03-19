@@ -43,7 +43,12 @@ public class JoinNode implements SqlNode {
             String resolvedRightCol = columnResolver.resolve(rightCol, ctx);
 
             assert meta != null;
+
             String alias = "";
+            if(resolvedLeftCol.contains(".")) {
+                alias = resolvedLeftCol.split("\\.")[0] + " ";
+            }
+
 
             String joinStr = this.joinType + " " + actualTable + " " + alias + "ON " + resolvedLeftCol + " = " + resolvedRightCol;
 

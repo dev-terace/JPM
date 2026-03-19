@@ -2,12 +2,15 @@ package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.TreePath;
+import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
+import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
 
 import javax.lang.model.element.TypeElement;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -20,15 +23,22 @@ public class SegmentInliner {
     private final DslCommandProcessor dslCommandProcessor;
     private final AstContext                   astContext;
     private final Set<String>                  dslKeywords;
+    private final ErrorTracker errorTracker;
+    private final JoinNodeValidatorPolicyV2 joinValidator;
+    private static final List<String> JOIN_COMMANDS      = Arrays.asList("innerJoin", "leftJoin", "rightJoin");
 
     public SegmentInliner(ArgumentTokenExtractor tokenExtractor,
                           DslCommandProcessor dslCommandProcessor,
                           AstContext astContext,
-                          Set<String> dslKeywords) {
+                          Set<String> dslKeywords,
+                          ErrorTracker errorTracker,
+                          JoinNodeValidatorPolicyV2 joinValidator) {
         this.tokenExtractor   = tokenExtractor;
         this.dslCommandProcessor = dslCommandProcessor;
         this.astContext       = astContext;
         this.dslKeywords      = dslKeywords;
+        this.errorTracker   = errorTracker;
+        this.joinValidator = joinValidator;
     }
 
     // -------------------------------------------------------------------------
@@ -41,9 +51,22 @@ public class SegmentInliner {
                         MapParamRegistryImpl mapParamRegistry,
                         MethodMeta methodMeta) {
         try {
+
+
             List<String> passedArgs  = tokenExtractor.extract(call, mapParamRegistry);
             String segmentClassName  = resolveSegmentClassName(repoElement, passedArgs);
             String segmentMethodName = passedArgs.get(1);
+
+            if(segmentMethodName.contains("::")) {
+                segmentMethodName = segmentMethodName.split("::")[1];
+            }
+
+            LogPrinter.info("[segmentInliner] passedArgs = " + passedArgs);
+            errorTracker.setClassName(segmentClassName);
+            errorTracker.setMethodName(segmentMethodName);
+            errorTracker.setTrees(astContext.getTrees());
+
+
             List<String> segmentArgs = passedArgs.subList(2, passedArgs.size());
 
             inline(methodMeta, segmentArgs, segmentClassName, segmentMethodName);
@@ -156,6 +179,11 @@ public class SegmentInliner {
 
             List<String> rawArgs = tokenExtractor.extract(call, argContext);
             LogPrinter.info("[SegmentInliner] rawArgs: " + rawArgs);
+
+            if(JOIN_COMMANDS.contains(command)) {
+                joinValidator.validateJoinType(command, rawArgs.get(1), rawArgs.get(2));
+            }
+
             dslCommandProcessor.process(command, rawArgs, methodMeta);
         }
     }

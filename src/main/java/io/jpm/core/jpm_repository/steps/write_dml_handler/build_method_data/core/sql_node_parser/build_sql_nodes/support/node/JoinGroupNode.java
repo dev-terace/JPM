@@ -3,6 +3,7 @@ package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.cor
 
 
 
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.model.DslStatement;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 
@@ -27,6 +28,7 @@ public class JoinGroupNode implements SqlNode {
         this.joinType = cmd.startsWith("left") ? "LEFT JOIN" : "INNER JOIN";
         // args: [targetClass, leftCol, rightCol]
         this.targetClass = (!args.isEmpty()) ? args.get(0) : "";
+
         this.leftCol = (args.size() > 1) ? args.get(1) : "";
         this.rightCol = (args.size() > 2) ? args.get(2) : "";
         this.subStatements = subStatements; // 생성자 주입
@@ -46,11 +48,15 @@ public class JoinGroupNode implements SqlNode {
     @Override
     public String toSql(BuildContext ctx) {
         // 1. 진짜 별칭(Alias) 추출: "item_summary.order_id" -> "item_summary"
-        String realAlias = "sub_query";
-        if (rightCol.contains(".")) {
-            realAlias = rightCol.split("\\.")[0];
-        } else if (rightCol.contains("|")) {
-            realAlias = rightCol.split("\\|")[0];
+        String leftDefaultAlias = "sub";
+
+
+        LogPrinter.info("[joinGroupNode] leftCol: "+ leftCol + ", rightCol: " + rightCol);
+
+        if (leftCol.contains(".")) {
+            leftDefaultAlias = leftCol.split("\\.")[0];
+        } else if (leftCol.contains("|")) {
+            leftDefaultAlias = leftCol.split("\\|")[0];
         }
 
         // 2. 서브쿼리용 메타데이터 결정
@@ -63,16 +69,14 @@ public class JoinGroupNode implements SqlNode {
         String subQuerySql = nodeParser.generateSqlFromStatements(this.subStatements, subMeta != null ? subMeta : mainEntityMeta);
 
         // 3. ON 조건 정제
-        String resolvedLeft = leftCol.replace("|", ".");
-        String resolvedRight = rightCol.replace("|", ".");
 
         // 최종 SQL 조립
         return String.format("%s (\n%s\n) AS %s ON %s = %s",
                 joinType,
                 indent(subQuerySql),
-                realAlias,
-                resolvedLeft,
-                resolvedRight);
+                leftDefaultAlias,
+                leftCol,
+                rightCol);
     }
 
     private String indent(String sql) {

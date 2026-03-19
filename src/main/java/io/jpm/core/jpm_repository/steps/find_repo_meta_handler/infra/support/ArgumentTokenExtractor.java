@@ -71,6 +71,9 @@ public class ArgumentTokenExtractor {
         MethodInvocationTree lambdaCall = (MethodInvocationTree) lambda.getBody();
         tokens.add(AstMethodTree.getMethodName(lambdaCall));
 
+        LogPrinter.info("extractFromLambda : " + AstMethodTree.getMethodName(lambdaCall));
+
+
         for (ExpressionTree lambdaArg : lambdaCall.getArguments()) {
             String resolved = valueResolver.resolve(lambdaArg, mapParamRegistryImpl, false, false);
             tokens.add(resolved != null ? resolved : "");

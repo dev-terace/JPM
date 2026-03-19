@@ -67,6 +67,8 @@ public class ArgumentTokenExtractorValueResolver {
             String name = AstMethodTree.getMethodName(mCall);
             List<? extends ExpressionTree> args = mCall.getArguments();
 
+            System.out.println("resolveMethodInvocation 분석 중인 메서드: " + name);
+
             switch (name) {
                 case "r":
 
@@ -84,6 +86,13 @@ public class ArgumentTokenExtractorValueResolver {
                     ExpressionTree methodSel = mCall.getMethodSelect();
                     if (!(methodSel instanceof MemberSelectTree)) return "";
                     ExpressionTree scope = ((MemberSelectTree) methodSel).getExpression();
+
+
+
+                    LogPrinter.info("[resolveMethodInvocation] " + resolve(scope, mapParamRegistryImpl, false, true)
+                            + " AS "
+                            + resolve(args.get(0), mapParamRegistryImpl, false, true));
+
                     return resolve(scope, mapParamRegistryImpl, false, true)
                             + " AS "
                             + resolve(args.get(0), mapParamRegistryImpl, false, true);
@@ -95,6 +104,7 @@ public class ArgumentTokenExtractorValueResolver {
                     LogPrinter.info("[joinNode] alias=" + alias + " field=" + field);
                     return alias + "." + field;
                 }
+
                 default:
                     return "";
             }

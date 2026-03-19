@@ -94,6 +94,8 @@ public class ErrorTrackerImpl implements ErrorTracker {
     @Override
     public ErrorTracker addErrorInfo(ErrorCode err) {
         this.err = err; // 현재 임시 상태 업데이트
+
+        LogPrinter.info("addErrorInfo chainMethod: " + chainMethodName);
         errorInfos.add(ErrorInfo.builder()
                 .chainMethodName(chainMethodName)
                 .errorElement(errorElement)
@@ -138,7 +140,7 @@ public class ErrorTrackerImpl implements ErrorTracker {
     // --- Report ---
     @Override
     public String reportChain() {
-
+        LogPrinter.info("reportChain errorInfos: " + errorInfos);
         return buildReport("JPM REPOSITORY ERROR REPORT", e ->
                 cache.popChainSourceLocation(e.getClassName(), e.getMethodName(), e.getChainMethodName())
         );

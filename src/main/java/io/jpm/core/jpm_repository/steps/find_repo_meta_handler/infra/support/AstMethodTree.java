@@ -22,7 +22,7 @@ public class AstMethodTree {
         return "";
     }
 
-    public static String getScopeName(MethodInvocationTree call) {
+/*    public static String getScopeName(MethodInvocationTree call) {
         ExpressionTree sel = call.getMethodSelect();
         if (sel instanceof MemberSelectTree) {
             ExpressionTree scope = ((MemberSelectTree) sel).getExpression();
@@ -30,7 +30,7 @@ public class AstMethodTree {
             if (scope instanceof MemberSelectTree) return ((MemberSelectTree) scope).getIdentifier().toString();
         }
         return null;
-    }
+    }*/
 
     /**
      * a.select().from().where() 형태의 체이닝을 실행 순서(왼→오른) 리스트로 평탄화합니다.

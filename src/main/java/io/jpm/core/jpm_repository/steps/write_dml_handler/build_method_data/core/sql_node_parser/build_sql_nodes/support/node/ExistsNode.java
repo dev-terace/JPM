@@ -1,5 +1,6 @@
 package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node;
 
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.model.DslStatement;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
@@ -50,7 +51,7 @@ public class ExistsNode implements SqlNode {
         // 서브쿼리용 독립 컨텍스트 (부모 별칭 맵 상속)
 
         String subSql = nodeParser.generateSqlFromStatements(subStatements, subMeta);
-
+        LogPrinter.info("[ExistsNode] " + subMeta);
         String operator = cmd.contains("Not") ? "NOT EXISTS" : "EXISTS";
         return operator + " (\n" + subSql + "\n)";
     }

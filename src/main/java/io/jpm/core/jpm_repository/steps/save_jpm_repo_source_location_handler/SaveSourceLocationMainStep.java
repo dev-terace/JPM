@@ -51,8 +51,7 @@ public class SaveSourceLocationMainStep implements Step<JpmRepoContext> {
         String fqcn = repoElement.getQualifiedName().toString();
 
         scanner.setClassName(fqcn);
-        errorTracker.setClassName(fqcn);
-        errorTracker.setTrees(trees);
+
         scanner.init(element, cache.getSourceLocationCache());
         scanner.scan(path, null);
     }

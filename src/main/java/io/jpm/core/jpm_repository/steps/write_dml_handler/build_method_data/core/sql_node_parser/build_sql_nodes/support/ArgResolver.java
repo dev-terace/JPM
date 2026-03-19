@@ -23,6 +23,8 @@ public class ArgResolver {
     }
 
     public List<String> resolveAll(List<String> rawArgs, EntityMeta mainMeta, BuildContext ctx) {
+
+        LogPrinter.info("[ArgResolver] resolveAll rawArgs = "+rawArgs );
         return rawArgs.stream()
                 .map(arg -> arg != null ? resolve(arg, mainMeta, ctx) : "")
                 .collect(Collectors.toList());
@@ -65,15 +67,22 @@ public class ArgResolver {
         String classNameForMeta   = refObj;
         String explicitTableAlias = null;
 
-        if (refObj.contains("|")) {
-            String[] refParts     = refObj.split("\\|");
+
+
+        if (refObj.contains(".")) {
+            LogPrinter.info("[ArgResolver] resolveMethodRef refObj = "+refObj);
+            String[] refParts     = refObj.split("\\.");
             explicitTableAlias    = refParts[0];
             classNameForMeta      = refParts[1];
         }
 
+
+
         EntityMeta targetMeta = "target".equals(classNameForMeta)
                 ? mainMeta
                 : repoMetaRegistry.getEntityMeta(classNameForMeta);
+
+
 
         if (targetMeta != null) {
             String columnName = targetMeta.getColumn(fieldName);
@@ -86,12 +95,17 @@ public class ArgResolver {
                     ? explicitTableAlias
                     : ctx.resolveAlias(tableName);
 
+            LogPrinter.info("[ArgResolver] resolveMethodRef alias = "+explicitTableAlias);
+
             // 메인 테이블이고 별칭 접두어 불필요한 경우 컬럼명만 반환
             if (!ctx.isRequiresPrefix()
                     && tableName.equals(mainMeta.getTableName())
                     && alias.equals(tableName)) {
+
                 return finalCol;
             }
+
+            LogPrinter.info("[resolveMethodRef] : " + alias + "." + finalCol);
             return alias + "." + finalCol;
         }
 

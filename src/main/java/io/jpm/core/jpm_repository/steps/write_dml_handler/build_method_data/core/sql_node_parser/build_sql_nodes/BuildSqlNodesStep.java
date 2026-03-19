@@ -56,8 +56,10 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
 
             switch (cmd) {
                 case "select":
-                case "selectRaw":
                     ctx.addNode(new SelectNode(stmt.getArgs(), columnResolver));
+                    break;
+                case "selectRaw":
+                    ctx.addNode(new SelectRawNode(stmt.getArgs(), columnResolver));
                     break;
 
                 case "from":

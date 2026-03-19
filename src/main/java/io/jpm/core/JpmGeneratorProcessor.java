@@ -22,6 +22,7 @@ import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.Arg
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInliner;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
+import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
 import io.jpm.core.m_entity.processor.MEntityPipelineV2;
 
 
@@ -162,7 +163,10 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
                     .commandProcessor(commandProcV2)
                     .mapParamRegistry(new MapParamRegistryImpl())
                     .findRepoMetaValidProc(new FindRepoMetaValidProc(cache, errorTracker, new ColumnResolver(cache.getRepoMetaRegistry())))
-                    .segmentInliner(new SegmentInliner(argumentTokenExtractor, commandProcV2, new AstContext(processingEnv), DSLKeywords.getDSLKeywords()))
+                    .segmentInliner(new SegmentInliner(argumentTokenExtractor, commandProcV2
+                                    ,new AstContext(processingEnv), DSLKeywords.getDSLKeywords(), errorTracker,
+                                    new JoinNodeValidatorPolicyV2(cache, errorTracker, new ColumnResolver(repoMetaRegistry))
+                    ))
                     .errorTracker(errorTracker)
                     .build();
 
