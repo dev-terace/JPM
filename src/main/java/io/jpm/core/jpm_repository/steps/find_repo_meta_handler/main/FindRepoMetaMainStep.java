@@ -43,10 +43,13 @@ public class FindRepoMetaMainStep implements Step<JpmRepoContext> {
 
         List<RepoMeta> repoMetas = new ArrayList<>();
 
+
+
         for (Element element : roundEnv.getElementsAnnotatedWith(JpmRepository.class)) {
             TypeElement repoElement = (TypeElement) element;
             ClassTree classTree     = trees.getTree(repoElement); // 여기서 가져오기
             RepoMeta repoMeta       = buildRepoMeta(element, context);
+
 
             for (Tree member : classTree.getMembers()) {
                 if (member instanceof MethodTree) {

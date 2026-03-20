@@ -8,6 +8,7 @@ import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.Arg
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInliner;
 import io.jpm.core.jpm_repository.handler.find_repo_meta_handler.FindRepoMetaValidProc;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import org.immutables.value.Value;
 
 import java.util.Map;
@@ -40,6 +41,8 @@ public abstract class GlobalRegistry {
     public abstract SegmentInliner segmentInliner();
     public abstract ErrorTracker errorTracker();
     public abstract FindRepoMetaValidProc findRepoMetaValidProc();
+
+    public abstract LocalVariableCollector localVariableCollector();
 
     // AppConfig 초기화는 빌드 후 별도 호
 }

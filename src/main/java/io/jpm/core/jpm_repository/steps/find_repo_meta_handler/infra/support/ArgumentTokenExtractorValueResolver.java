@@ -29,8 +29,6 @@ public class ArgumentTokenExtractorValueResolver {
         if (expr == null) return "";
 
 
-
-
         try {
             if (expr instanceof MethodInvocationTree) {
                 return resolveMethodInvocation((MethodInvocationTree) expr, mapParamRegistryImpl, resolveToColumn);
@@ -67,7 +65,7 @@ public class ArgumentTokenExtractorValueResolver {
             String name = AstMethodTree.getMethodName(mCall);
             List<? extends ExpressionTree> args = mCall.getArguments();
 
-            System.out.println("resolveMethodInvocation 분석 중인 메서드: " + name);
+            LogPrinter.info("resolveMethodInvocation 분석 중인 메서드: " + name);
 
             switch (name) {
                 case "r":

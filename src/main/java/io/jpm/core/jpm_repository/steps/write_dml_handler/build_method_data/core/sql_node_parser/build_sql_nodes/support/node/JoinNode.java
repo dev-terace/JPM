@@ -49,6 +49,13 @@ public class JoinNode implements SqlNode {
                 alias = resolvedLeftCol.split("\\.")[0] + " ";
             }
 
+            if (actualTable.trim().equals(alias.trim())) {
+                alias = "";
+            }
+
+
+            LogPrinter.info("Alias: " + alias + ", actual table: " + actualTable);
+
 
             String joinStr = this.joinType + " " + actualTable + " " + alias + "ON " + resolvedLeftCol + " = " + resolvedRightCol;
 

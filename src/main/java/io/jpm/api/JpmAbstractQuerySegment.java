@@ -1,7 +1,5 @@
 package io.jpm.api;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public abstract class JpmAbstractQuerySegment {
@@ -14,53 +12,20 @@ public abstract class JpmAbstractQuerySegment {
 
 
 
-    public static Arg.Raw r(Object obj) { return new Arg.Raw(obj); }
-    public static <E, R> Arg.Raw r(MFieldRef<E, R> fieldRef) { return new Arg.Raw(fieldRef); }
+    public static Raw r(Object obj) { return new Raw(obj); }
+    public static <E, R> Raw r(MFieldRef<E, R> fieldRef) { return new Raw(fieldRef); }
 
 
 
 
-    public static Arg.Quoted q(String val) { return new Arg.Quoted(val); }
+    public static Quoted q(String val) { return new Quoted(val); }
 
 
-    public static  Arg.Bind b(String val) { return new Arg.Bind(val); }
-    public static <E, R> Arg.Bind b(MFieldRef<E, R> fieldRef) { return new Arg.Bind(fieldRef); }
+    public static Bind b(String val) { return new Bind(val); }
+    public static <E, R> Bind b(MFieldRef<E, R> fieldRef) { return new Bind(fieldRef); }
 
 
-    public static class Arg {
-        // 1. 모든 내부 클래스가 구현할 마커 인터페이스 선언
-        public interface IArg {}
 
-        public static class Raw implements IArg { // implements 추가
-            public String val;
-            public Object origin;
-            public Raw(Object v) {
-                this.origin = v;
-                this.val = (v instanceof String) ? (String) v : "___RAW_REF___";
-            }
-            @Override public String toString() { return val; }
-        }
-
-        public static class Quoted implements IArg { // implements 추가
-            public String val;
-            public Object origin;
-            public Quoted(Object v) {
-                this.origin = v;
-                this.val = (v instanceof String) ? (String) v : "___QUOTED_REF___";
-            }
-            @Override public String toString() { return "'" + val + "'"; }
-        }
-
-        public static class Bind implements IArg { // implements 추가
-            public String val;
-            public Object origin;
-            public Bind(Object v) {
-                this.origin = v;
-                this.val = (v instanceof String) ? (String) v : "___BIND_REF___";
-            }
-            @Override public String toString() { return "#{" + val + "}"; }
-        }
-    }
 
 
     public static class AliasedField<E, R> {
@@ -116,6 +81,7 @@ public abstract class JpmAbstractQuerySegment {
 
     @SafeVarargs
     public final <E, R> void selectRaw(String rawSqls, MFieldRef<E, R>... fieldRefs) {}
+    public final <E, R> void selectRaw(String rawSqls, AliasedField<?, ?>... aliasedFields) {}
 
     public void from(Class<?> entityClass) {}
     public void from(String table) {}
@@ -303,12 +269,29 @@ public abstract class JpmAbstractQuerySegment {
 
 
     // segment는 단순하게
-    public <E extends JpmAbstractQuerySegment> void segment(
+/*    public <E extends JpmAbstractQuerySegment> void segment(
             Class<E> type,
             Consumer<E> consumer  // java.util.function.Consumer 사용
     ) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         E instance = type.getDeclaredConstructor().newInstance();
         consumer.accept(instance);
+    }*/
+
+
+    public <E> void segment(
+            Class<? extends E> type,
+            Consumer<E> consumer
+    ) {
+        E instance = createInstance(type);
+        consumer.accept(instance);
+    }
+
+    protected <E> E createInstance(Class<? extends E> type) {
+        try {
+            return type.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

@@ -74,6 +74,7 @@ public class ArgumentTokenExtractor {
         LogPrinter.info("extractFromLambda : " + AstMethodTree.getMethodName(lambdaCall));
 
 
+        LogPrinter.info("tokens : " + lambdaCall.getArguments());
         for (ExpressionTree lambdaArg : lambdaCall.getArguments()) {
             String resolved = valueResolver.resolve(lambdaArg, mapParamRegistryImpl, false, false);
             tokens.add(resolved != null ? resolved : "");
@@ -95,13 +96,4 @@ public class ArgumentTokenExtractor {
         return resolved != null ? resolved : "";
     }
 
-    private String inferLiteralType(ExpressionTree conditionVal, String command) {
-
-        if (!(conditionVal instanceof LiteralTree)) return null;
-
-
-        return  AstTypeInferrerUtil.inferFromLiteralValue(((LiteralTree) conditionVal).getValue(), command);
-
-
-    }
 }

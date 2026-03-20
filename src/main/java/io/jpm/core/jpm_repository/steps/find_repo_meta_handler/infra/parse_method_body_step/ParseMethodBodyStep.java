@@ -24,6 +24,7 @@ public class ParseMethodBodyStep implements Step<MethodParseContext> {
     private final MapParamRegistryImpl mapParamRegistry;
     private final ErrorTracker         errorTracker;
     private final Set<String>          DSL_KEYWORDS;
+    private final GlobalRegistry      globalRegistry;
 
     public ParseMethodBodyStep(GlobalRegistry globalRegistry, AstContext astContext) {
         this.dslCommandProcessor = globalRegistry.commandProcessor();
@@ -31,12 +32,16 @@ public class ParseMethodBodyStep implements Step<MethodParseContext> {
         this.mapParamRegistry   = globalRegistry.mapParamRegistry();
         this.errorTracker       = globalRegistry.errorTracker();
         this.DSL_KEYWORDS       = DSLKeywords.getDSLKeywords();
+        this.globalRegistry = globalRegistry;
     }
 
     @Override
     public void execute(MethodParseContext context) {
         BlockTree body = context.getMethodTree().getBody();
         if (body == null) return;
+
+        globalRegistry.localVariableCollector().collect(body, mapParamRegistry);
+
 
         for (StatementTree stmt : body.getStatements()) {
             if (stmt instanceof ExpressionStatementTree) {
@@ -56,11 +61,13 @@ public class ParseMethodBodyStep implements Step<MethodParseContext> {
 
             errorTracker.setMethodName(methodMeta.getMethodName());
 
+
+            boolean isSegmentCommand = !command.equals("super");
             if (isDslCommand(command)) {
 
                 errorTracker.setClassName(context.getRepoElement().getQualifiedName().toString());
                 dslCommandProcessor.execute(call, mapParamRegistry, methodMeta);
-            } else if (!command.equals("super")) {
+            } else if (isSegmentCommand) {
                 segmentInliner.execute(call, repoElement, mapParamRegistry, methodMeta);
             }
         }

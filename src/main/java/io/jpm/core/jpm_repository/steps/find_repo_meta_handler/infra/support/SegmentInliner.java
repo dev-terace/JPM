@@ -7,8 +7,11 @@ import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +30,7 @@ public class SegmentInliner {
     private final JoinNodeValidatorPolicyV2 joinValidator;
     private static final List<String> JOIN_COMMANDS      = Arrays.asList("innerJoin", "leftJoin", "rightJoin");
 
+
     public SegmentInliner(ArgumentTokenExtractor tokenExtractor,
                           DslCommandProcessor dslCommandProcessor,
                           AstContext astContext,
@@ -39,6 +43,7 @@ public class SegmentInliner {
         this.dslKeywords      = dslKeywords;
         this.errorTracker   = errorTracker;
         this.joinValidator = joinValidator;
+
     }
 
     // -------------------------------------------------------------------------
@@ -83,19 +88,58 @@ public class SegmentInliner {
 
     private String resolveSegmentClassName(TypeElement repoElement, List<String> passedArgs) {
 
-        String simpleName = passedArgs.get(0).replace(".class", "");
+        String arg = passedArgs.get(0);
 
-        String fqn = findFqnFromImports(repoElement, simpleName);
+        // 클래스 리터럴인 경우
+        if (arg.contains(".class")) {
+            String simpleName = arg.replace(".class", "");
+            String fqn = findFqnFromImports(repoElement, simpleName);
+            if (!fqn.isEmpty()) return fqn;
 
-        if (!fqn.isEmpty()) return fqn;
+            String pkg = astContext.getElements()
+                    .getPackageOf(repoElement)
+                    .getQualifiedName()
+                    .toString();
+            return pkg + "." + simpleName;
+        }
 
-        // 같은 패키지 fallback
-        String pkg = astContext.getElements()
-                .getPackageOf(repoElement)
-                .getQualifiedName()
-                .toString();
+        // 변수인 경우 — 필드 초기값에서 클래스명 추출
+        String resolved = resolveFromFieldInitializer(repoElement, arg);
+        if (resolved != null) return resolved;
 
-        return pkg + "." + simpleName;
+        LogPrinter.error("[SegmentInliner] 변수 '" + arg + "' 의 값을 resolve할 수 없습니다.");
+        return "";
+    }
+
+    private String resolveFromFieldInitializer(TypeElement repoElement, String variableName) {
+
+        for (Element enclosed : repoElement.getEnclosedElements()) {
+            if (enclosed.getKind() != ElementKind.FIELD) continue;
+            if (!enclosed.getSimpleName().toString().equals(variableName)) continue;
+
+            Tree node = astContext.getTrees().getTree(enclosed);
+            if (!(node instanceof VariableTree)) continue;
+            VariableTree varTree = (VariableTree) node;
+
+            ExpressionTree initializer = varTree.getInitializer();
+            if (initializer == null) continue;
+
+            String initStr = initializer.toString();
+            if (!initStr.contains(".class")) continue;
+
+            String simpleName = initStr.replace(".class", "");
+            String fqn = findFqnFromImports(repoElement, simpleName);
+            if (!fqn.isEmpty()) return fqn;
+
+            String pkg = astContext.getElements()
+                    .getPackageOf(repoElement)
+                    .getQualifiedName()
+                    .toString();
+            return pkg + "." + simpleName;
+        }
+
+        LogPrinter.error("[SegmentInliner] 필드 '" + variableName + "' 를 찾을 수 없거나 .class 리터럴이 아닙니다.");
+        return null;
     }
 
     private String findFqnFromImports(TypeElement repoElement, String simpleName) {
@@ -163,12 +207,18 @@ public class SegmentInliner {
                              MapParamRegistryImpl argContext,
                              MethodMeta methodMeta) {
         if (body == null) return;
+
+
+
         for (StatementTree stmt : body.getStatements()) {
             if (!(stmt instanceof ExpressionStatementTree)) continue;
             ExpressionTree expr = ((ExpressionStatementTree) stmt).getExpression();
             processChain(expr, argContext, methodMeta);
         }
     }
+
+
+
 
     private void processChain(ExpressionTree expr,
                               MapParamRegistryImpl argContext,
