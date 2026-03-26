@@ -14,6 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -33,6 +34,8 @@ public class ErrorTrackerImpl implements ErrorTracker {
     private Element errorElement;
     private Trees trees;
     private String expression;
+    private int lineNumber;
+
 
     private final List<ErrorInfo> errorInfos = new ArrayList<>();
 
@@ -73,6 +76,12 @@ public class ErrorTrackerImpl implements ErrorTracker {
     }
 
     @Override
+    public ErrorTracker setLineNumber(int lineNumber) {
+        this.lineNumber = lineNumber;
+        return this;
+    }
+
+    @Override
     public ErrorTracker setTrees(Trees trees) {
         this.trees = trees;
         return this;
@@ -92,20 +101,34 @@ public class ErrorTrackerImpl implements ErrorTracker {
 
     // --- Add ErrorInfo ---
     @Override
-    public ErrorTracker addErrorInfo(ErrorCode err) {
+    public void addErrorInfo(ErrorCode err) {
         this.err = err; // 현재 임시 상태 업데이트
 
         LogPrinter.info("addErrorInfo chainMethod: " + chainMethodName);
         errorInfos.add(ErrorInfo.builder()
                 .chainMethodName(chainMethodName)
-                .errorElement(errorElement)
                 .fieldName(fieldName)
                 .className(className)
                 .err(err)
                 .methodName(methodName)
-                .expression(expression)
                 .build());
-        return this;
+    }
+
+    @Override
+    public void addErrorInfo(ErrorInfo errorInfo) {
+        LogPrinter.info("[ErrorTracker]" +
+                " .chainMethodName(" + errorInfo.getChainMethodName() + ")" +
+                " .fieldName("       + errorInfo.getFieldName()       + ")" +
+                " .className("       + errorInfo.getClassName()       + ")" +
+                " .err("             + errorInfo.getErr()             + ")" +
+                " .methodName("      + errorInfo.getMethodName()       + ")" + ")"
+        );
+
+        errorInfos.add(
+               errorInfo
+
+        );
+
     }
 
     // --- Getter ---
@@ -142,7 +165,7 @@ public class ErrorTrackerImpl implements ErrorTracker {
     public String reportChain() {
         LogPrinter.info("reportChain errorInfos: " + errorInfos);
         return buildReport("JPM REPOSITORY ERROR REPORT", e ->
-                cache.popChainSourceLocation(e.getClassName(), e.getMethodName(), e.getChainMethodName())
+                cache.popChainSourceLocation(e.getClassName(), e.getMethodName(), e.getChainMethodName(), Optional.ofNullable(e.getLineNumber()).orElse(-1))
         );
 
     }
@@ -190,14 +213,20 @@ public class ErrorTrackerImpl implements ErrorTracker {
                 sb.append("\n  Target: className[").append(e.getClassName()).append("], Occurrence[").append(occurrence).append("]");
 
                 if (loc != null) {
+
                     String ideLink = buildAbsoluteLink(errorElement, loc.getLineNumber());
                     sb.append("\n").append(ideLink);
-                    sb.append("\n  Details: Failed at '").append(String.format("(%s)'", expression.replace("\n", "").replace("\r", "")));
+                    sb.append("\n  Details: Failed at '")
+                            .append(String.format("(%s)'",
+                             expression.replace("\n", "")
+                            .replace("\r", "")));
+
                 } else {
                     sb.append("\n  Location not found for ")
                             .append(e.getClassName()).append(".")
                             .append(e.getMethodName()).append("\n  ")
-                            .append(e.getChainMethodName() != null ? e.getChainMethodName() : "Unknown Method").append("\n");
+                            .append(e.getChainMethodName() != null ? e.getChainMethodName() : "Unknown Method")
+                            .append("\n");
                 }
                 sb.append("\n------------------------------------------------------------");
             }

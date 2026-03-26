@@ -26,7 +26,9 @@ public class MethodMeta {
     }
 
     public void addStatement(DslStatement stmt) {
+
         this.statements.add(stmt);
+
     }
 
     public void addParameter(String paramName, String paramType) {
@@ -58,6 +60,7 @@ public class MethodMeta {
         StringBuilder sb = new StringBuilder();
         sb.append("MethodMeta{");
         sb.append("methodName='").append(methodName).append('\'');
+
 
         if (targetType != null) {
             sb.append(", targetType='").append(targetType).append('\'');

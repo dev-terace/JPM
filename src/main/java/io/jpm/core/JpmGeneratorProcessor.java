@@ -15,15 +15,14 @@ import io.jpm.core.jpm_data_source_registry.JpmDataSourceRegistry;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DSLKeywords;
-import io.jpm.core.jpm_repository.handler.find_repo_meta_handler.FindRepoMetaValidProc;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcessorValidStep;
 import io.jpm.core.jpm_repository.pipeline.JpmRepositoryPipeline;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractorValueResolver;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInliner;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInlinerStep;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
-import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
 import io.jpm.core.m_entity.processor.MEntityPipelineV2;
 
 
@@ -151,7 +150,7 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
             ErrorTracker errorTracker = new ErrorTrackerImpl(cache.getSourceLocationCache());
             ArgumentTokenExtractor argumentTokenExtractor = new ArgumentTokenExtractor(new ArgumentTokenExtractorValueResolver(repoMetaRegistry), cache, errorTracker);
-            DslCommandProcessor commandProcV2 = new DslCommandProcessor(cache, errorTracker, argumentTokenExtractor);
+            DslCommandProcStep commandProcV2 = new DslCommandProcStep(cache, errorTracker, argumentTokenExtractor);
 
 
             Map<String, String> safeOptions = processingEnv.getOptions().entrySet().stream()
@@ -159,17 +158,17 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
                     .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 
+            ColumnResolver columnResolver = new ColumnResolver(cache.getRepoMetaRegistry());
 
             return ImmutableGlobalRegistry.builder()
                     .options(safeOptions)
                     .tokenExtractor(argumentTokenExtractor)
                     .commandProcessor(commandProcV2)
                     .mapParamRegistry(new MapParamRegistryImpl())
-                    .findRepoMetaValidProc(new FindRepoMetaValidProc(cache, errorTracker, new ColumnResolver(cache.getRepoMetaRegistry())))
-                    .segmentInliner(new SegmentInliner(argumentTokenExtractor, commandProcV2
-                                    ,new AstContext(processingEnv), DSLKeywords.getDSLKeywords(), errorTracker,
-                                    new JoinNodeValidatorPolicyV2(cache, errorTracker, new ColumnResolver(repoMetaRegistry))
-                    ))
+                    .findRepoMetaValidProc(new DslCommandProcessorValidStep(cache, errorTracker, columnResolver))
+                    .segmentInliner(new SegmentInlinerStep(argumentTokenExtractor, commandProcV2
+                                    ,new AstContext(processingEnv), DSLKeywords.getDSLKeywords(), errorTracker)
+                    )
                     .localVariableCollector(new LocalVariableCollector(new ArgumentTokenExtractorValueResolver(repoMetaRegistry)))
 
                     .errorTracker(errorTracker)

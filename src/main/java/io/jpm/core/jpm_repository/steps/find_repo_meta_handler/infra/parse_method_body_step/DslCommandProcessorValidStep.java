@@ -1,9 +1,13 @@
-package io.jpm.core.jpm_repository.handler.find_repo_meta_handler;
+package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step;
 
 import io.jpm.common.exception.ErrorCode;
+import io.jpm.common.exception.ErrorInfo;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.BuildTimeMetadataCache;
+import io.jpm.config.ast.Step;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.DslCommandProcValidContext;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.JoinNodeValidatorContext;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.MethodRefUtil;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
@@ -11,14 +15,16 @@ import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DslStatement;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
-import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
+import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorStep;
+
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
-
-public class FindRepoMetaValidProc {
+public class DslCommandProcessorValidStep implements Step<DslCommandProcValidContext> {
 
     private static final List<String> CONDITION_COMMANDS = Arrays.asList("where", "and", "or");
     private static final List<String> UPDATE_COMMANDS    = Arrays.asList("set", "setRaw");
@@ -27,26 +33,28 @@ public class FindRepoMetaValidProc {
     private final RepoMetaRegistry repoMetaRegistry;
     private final EntityRelationRegistry entityRelationRegistry;
     private final ErrorTracker errorTracker;
-    private final JoinNodeValidatorPolicyV2 joinValidator; // 기존 join 검증 재사용
+    private final JoinNodeValidatorStep joinValidator; // 기존 join 검증 재사용
 
-    public FindRepoMetaValidProc(BuildTimeMetadataCache cache, ErrorTracker errorTracker, ColumnResolver columnResolver) {
+    public DslCommandProcessorValidStep(BuildTimeMetadataCache cache, ErrorTracker errorTracker, ColumnResolver columnResolver) {
         this.repoMetaRegistry       = cache.getRepoMetaRegistry();
         this.entityRelationRegistry = cache.getEntityRelationRegistry();
         this.errorTracker           = errorTracker;
-        this.joinValidator          = new JoinNodeValidatorPolicyV2(cache, errorTracker, columnResolver);
+        this.joinValidator          = new JoinNodeValidatorStep(cache, errorTracker, columnResolver);
     }
 
     // ==========================================
     // Public API
     // ==========================================
-    public void validate(MethodMeta methodMeta) {
+    public void execute(DslCommandProcValidContext ctx) {
+
+        DslStatement stmt = ctx.getDslStatement();
 
 
 
-
-        for (DslStatement stmt : methodMeta.getStatements()) {
-
-            validateStatement(stmt);
+        try {
+            validateStatement(stmt, ctx);
+        }catch (Exception e) {
+            e.printStackTrace(System.err);
         }
 
 
@@ -56,23 +64,27 @@ public class FindRepoMetaValidProc {
     // Private - 분기
     // ==========================================
 
-    private void validateStatement(DslStatement stmt) {
+    private void validateStatement(DslStatement stmt, DslCommandProcValidContext ctx) {
         String command = stmt.getCommand();
 
-        errorTracker.setChainMethodName(command);
 
-        LogPrinter.info("Validating " + command);
+        ctx.setChainMethodName(command);
+
+
         if (CONDITION_COMMANDS.contains(command)) {
-            validateCondition(stmt);
+            LogPrinter.info("Validating command, " + command + ", "+ctx.getLineNumber());
+            validateCondition(stmt, ctx);
         } else if (UPDATE_COMMANDS.contains(command)) {
-            validateUpdate(stmt);
+            validateUpdate(stmt, ctx);
         } else if (JOIN_COMMANDS.contains(command)) {
-            validateJoin(stmt); // JoinNodeValidatorPolicyV2에 위임
+            validateJoin(stmt, ctx);
         }
 
         if (stmt.getSubStatements() != null) {
             for (DslStatement sub : stmt.getSubStatements()) {
-                validateStatement(sub);
+
+                LogPrinter.info("Validating sub " + sub.getCommand());
+                validateStatement(sub, ctx);
             }
         }
     }
@@ -83,7 +95,7 @@ public class FindRepoMetaValidProc {
     // arg(1) = "="
     // arg(2) = "2" or "'John'"
     // ==========================================
-    private void validateCondition(DslStatement stmt) {
+    private void validateCondition(DslStatement stmt, DslCommandProcValidContext ctx) {
 
         LogPrinter.info("validateCondition stmt: " + stmt.toString());
         String columnRef = stmt.getArg(0);
@@ -98,7 +110,7 @@ public class FindRepoMetaValidProc {
         String valueType = inferTypeFromValue(value);
         if (valueType == null) return;
 
-        checkTypeMismatch(fieldType, valueType);
+        checkTypeMismatch(fieldType, valueType, ctx);
 
         LogPrinter.info("chainMethodName: " + errorTracker.getChainMethodName() + ", errorTracker className: "+errorTracker.getClassName() + ", errorTracker methodName: "+errorTracker.getMethodName());
     }
@@ -108,7 +120,7 @@ public class FindRepoMetaValidProc {
     // arg(0) = "OrderEntity::getStatus"
     // arg(1) = "2" or "'John'"
     // ==========================================
-    private void validateUpdate(DslStatement stmt) {
+    private void validateUpdate(DslStatement stmt,  DslCommandProcValidContext ctx) {
         String columnRef = stmt.getArg(0);
         String value     = stmt.getArg(1);
 
@@ -120,7 +132,7 @@ public class FindRepoMetaValidProc {
         String valueType = inferTypeFromValue(value);
         if (valueType == null) return;
 
-        checkTypeMismatch(fieldType, valueType);
+        checkTypeMismatch(fieldType, valueType, ctx);
     }
 
     // ==========================================
@@ -131,12 +143,16 @@ public class FindRepoMetaValidProc {
     // → JoinNodeValidatorPolicyV2에 위임
     // ==========================================
 
-    private void validateJoin(DslStatement stmt) {
+    private void validateJoin(DslStatement stmt, DslCommandProcValidContext ctx) {
         String leftCol  = stmt.getArg(1);
         String rightCol = stmt.getArg(2);
         if (leftCol == null || rightCol == null) return;
         LogPrinter.info("validateJoin leftCol: " + leftCol + ", rightCol: " + rightCol);
-        joinValidator.validateJoinType(stmt.getCommand(), leftCol, rightCol);
+        joinValidator.execute(new JoinNodeValidatorContext
+                (stmt.getCommand(), leftCol, rightCol,
+                ctx.getClassName(), ctx.getMethodName(),
+                ctx.getChainMethodName(), ctx.getLineNumber()));
+
     }
 
     // ==========================================
@@ -186,14 +202,29 @@ public class FindRepoMetaValidProc {
         return null;
     }
 
-    private void checkTypeMismatch(String fieldType, String valueType) {
+    private void checkTypeMismatch(String fieldType, String valueType, DslCommandProcValidContext ctx) {
 
 
-        LogPrinter.info("checkTypeMismatch: fieldType: " + fieldType + ", valueType: " + valueType);
         if ("LONG".equals(fieldType) && "INTEGER".equals(valueType)) return;
         if (!fieldType.equals(valueType)) {
-            LogPrinter.info("checkTypeMismatch: fieldType: " + fieldType + ", valueType: " + valueType + " chainMethodName " + errorTracker.getChainMethodName());
-            errorTracker.addErrorInfo(ErrorCode.CONDITION_TYPE_MISMATCH);
+
+            LogPrinter.info(
+                    "[ERROR] class=" + ctx.getClassName()
+                            + ", method=" + ctx.getMethodName()
+                            + ", chain=" + ctx.getChainMethodName()
+                            + ", line=" + ctx.getLineNumber()
+                            + ", err=" + ErrorCode.CONDITION_TYPE_MISMATCH
+            );
+
+
+            errorTracker.addErrorInfo(ErrorInfo
+                    .builder()
+                            .className(ctx.getClassName())
+                            .methodName(ctx.getMethodName())
+                            .chainMethodName(ctx.getChainMethodName())
+                            .err(ErrorCode.CONDITION_TYPE_MISMATCH)
+                            .lineNumber(ctx.getLineNumber())
+                    .build());
         }
     }
 

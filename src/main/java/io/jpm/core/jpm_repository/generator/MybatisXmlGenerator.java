@@ -128,6 +128,8 @@ public class MybatisXmlGenerator {
         // 1. XML 헤더 및 매퍼 여는 태그 (한 번만 생성)
         // ========================================================
 
+
+
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
         xml.append("<!DOCTYPE mapper PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" ")
                 .append("\"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n\n");

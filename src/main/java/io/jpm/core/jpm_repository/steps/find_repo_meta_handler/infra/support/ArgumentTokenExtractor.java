@@ -20,12 +20,12 @@ public class ArgumentTokenExtractor {
     private static final List<String> CONDITION_COMMANDS = Arrays.asList("where", "and", "or");
 
     private final ArgumentTokenExtractorValueResolver valueResolver;
-    private final ArgValidatorPolicyV2 validator;
+
 
 
     public ArgumentTokenExtractor(ArgumentTokenExtractorValueResolver valueResolver, BuildTimeMetadataCache cache , ErrorTracker errorTracker) {
         this.valueResolver = valueResolver;
-        this.validator = new ArgValidatorPolicyV2(cache, errorTracker);
+
     }
 
     public List<String> extract(MethodInvocationTree call, MapParamRegistryImpl mapParamRegistryImpl) {

@@ -5,9 +5,9 @@ import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.AutoDDLPolicy;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.DslCommandProcessor;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInliner;
-import io.jpm.core.jpm_repository.handler.find_repo_meta_handler.FindRepoMetaValidProc;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInlinerStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcessorValidStep;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import org.immutables.value.Value;
 
@@ -36,11 +36,11 @@ public abstract class GlobalRegistry {
 
     // 기존 필드들
     public abstract ArgumentTokenExtractor tokenExtractor();
-    public abstract DslCommandProcessor commandProcessor();
+    public abstract DslCommandProcStep commandProcessor();
     public abstract MapParamRegistryImpl mapParamRegistry();
-    public abstract SegmentInliner segmentInliner();
+    public abstract SegmentInlinerStep segmentInliner();
     public abstract ErrorTracker errorTracker();
-    public abstract FindRepoMetaValidProc findRepoMetaValidProc();
+    public abstract DslCommandProcessorValidStep findRepoMetaValidProc();
 
     public abstract LocalVariableCollector localVariableCollector();
 

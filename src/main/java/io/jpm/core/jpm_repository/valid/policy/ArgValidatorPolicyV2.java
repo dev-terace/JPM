@@ -13,6 +13,7 @@ import io.jpm.core.jpm_repository.domain.enums.ValueType;
 import java.util.Arrays;
 import java.util.List;
 
+@Deprecated
 public class ArgValidatorPolicyV2 {
 
     private final RepoMetaRegistry repoMetaRegistry;

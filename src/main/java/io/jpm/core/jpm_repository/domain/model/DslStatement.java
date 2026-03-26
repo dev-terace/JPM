@@ -1,6 +1,7 @@
 package io.jpm.core.jpm_repository.domain.model;
 
 import java.util.List;
+import java.util.Objects;
 
 
 public class DslStatement {
@@ -69,4 +70,21 @@ public class DslStatement {
         sb.append('}');
         return sb.toString();
     }
+
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DslStatement)) return false;
+        DslStatement that = (DslStatement) o;
+        return Objects.equals(command, that.command)
+                && Objects.equals(args, that.args);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(command, args);
+    }
+
 }

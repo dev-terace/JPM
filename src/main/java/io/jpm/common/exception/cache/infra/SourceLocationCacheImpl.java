@@ -22,16 +22,18 @@ public class SourceLocationCacheImpl implements SourceLocationCache {
     private final Map<String, Map<String, List<ChainSourceLocation>>> chainLocationMap = new HashMap<>();
 
 
-    public ChainSourceLocation popChainSourceLocation(String className, String methodName, String chainMethodName) {
+    public ChainSourceLocation popChainSourceLocation(String className, String methodName, String chainMethodName, int lineNumber) {
 
 
-        LogPrinter.info("chain location map" + chainLocationMap.toString());
+        LogPrinter.info("chain location map" + chainLocationMap);
         List<ChainSourceLocation> locations = chainLocationMap.get(className).get(methodName);
 
 
         return popFromList(
                 locations,
-                loc -> loc.getChainMethodName().equals(chainMethodName),
+                loc -> loc.getChainMethodName().equals(chainMethodName)
+                        && loc.getLineNumber() == lineNumber,
+
                 String.format("ChainSourceLocation not found for %s.%s.%s", className, methodName, chainMethodName)
         );
 

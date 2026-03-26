@@ -1,21 +1,22 @@
-package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support;
+package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step;
 
-import com.sun.source.tree.MethodInvocationTree;
 import io.jpm.api.MqAssociation;
 import io.jpm.api.MqCollection;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.BuildTimeMetadataCache;
-import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.config.ast.Step;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DslStatement;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.model.MapJoinMeta;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
-import io.jpm.core.jpm_repository.handler.find_repo_meta_handler.FindRepoMetaValidProc;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.DslCommandProcContext;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.DslCommandProcValidContext;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.MethodRefUtil;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
-import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorPolicyV2;
+
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -25,7 +26,7 @@ import java.util.List;
  * DSL 커맨드(select, from, where, innerJoin, mapJoin …)를 받아
  * MethodMeta 에 DslStatement / MapJoinMeta 를 추가합니다.
  */
-public class DslCommandProcessor {
+public class DslCommandProcStep implements Step<DslCommandProcContext> {
 
     private static final List<String> JOIN_COMMANDS = Arrays.asList(
             "innerJoin", "leftJoin", "hashJoin", "mergeJoin", "loopJoin"
@@ -36,40 +37,38 @@ public class DslCommandProcessor {
     );
 
     private final RepoMetaRegistry          repoMetaRegistry;
-    private final ArgumentTokenExtractor tokenExtractor;
-    private final FindRepoMetaValidProc findRepoMetaValidProc;
+    private final DslCommandProcessorValidStep dslCommandProcessorValidStep;
 
-    public DslCommandProcessor(BuildTimeMetadataCache cache,
-                               ErrorTracker errorTracker,
-                               ArgumentTokenExtractor tokenExtractor) {
+
+
+    public DslCommandProcStep(BuildTimeMetadataCache cache,
+                              ErrorTracker errorTracker,
+                              ArgumentTokenExtractor tokenExtractor) {
         this.repoMetaRegistry  = cache.getRepoMetaRegistry();
-        this.tokenExtractor    = tokenExtractor;
-        this.findRepoMetaValidProc = new FindRepoMetaValidProc(cache, errorTracker, new ColumnResolver(repoMetaRegistry));
+        this.dslCommandProcessorValidStep = new DslCommandProcessorValidStep(cache, errorTracker, new ColumnResolver(repoMetaRegistry));
 
     }
 
     /** ParseMethodBodyStep 에서 호출 - 토큰 추출부터 처리까지 일괄 수행 */
-    public void execute(MethodInvocationTree call,
-                        MapParamRegistryImpl mapParamRegistry,
-                        MethodMeta methodMeta) {
-        List<String> rawArgs = tokenExtractor.extract(call, mapParamRegistry);
-        LogPrinter.info("[call] rawArgs=" + rawArgs);
-        process(AstMethodTree.getMethodName(call), rawArgs, methodMeta);
-    }
 
     /** SegmentInlinerStep 에서 이미 추출된 args 로 직접 호출 */
-    public void process(String command, List<String> rawArgs, MethodMeta methodMeta) {
+    public void execute(DslCommandProcContext context) {
+
+
+        String command = context.getCommand();
+
+
 
 
 
         if ("mapJoin".equals(command)) {
-            processMapJoin(rawArgs, methodMeta);
+            processMapJoin(context);
         } else if (JOIN_COMMANDS.contains(command)) {
             LogPrinter.info("[join] command=" + command);
-            processJoin(command, rawArgs, methodMeta);
+            processJoin(context);
         } else {
-            LogPrinter.info("rawARgs : " + rawArgs);
-            processDefault(command, rawArgs, methodMeta);
+
+            processDefault(context);
         }
     }
 
@@ -77,7 +76,10 @@ public class DslCommandProcessor {
     // Private handlers
     // -------------------------------------------------------------------------
 
-    private void processMapJoin(List<String> rawArgs, MethodMeta methodMeta) {
+    private void processMapJoin(DslCommandProcContext context) {
+        List<String> rawArgs = context.getRawArgs();
+        MethodMeta methodMeta = context.getMethodMeta();
+
         if (rawArgs.isEmpty()) return;
         String raw       = rawArgs.get(0);
         String fieldName = MethodRefUtil.extractFieldName(raw);
@@ -87,34 +89,48 @@ public class DslCommandProcessor {
         methodMeta.addStatement(new DslStatement("mapJoin", rawArgs));
     }
 
-    private void processJoin(String command, List<String> rawArgs, MethodMeta methodMeta) {
+    private void processJoin(DslCommandProcContext ctx) {
 
-
-
+        List<String> rawArgs = ctx.getRawArgs();
+        MethodMeta methodMeta = ctx.getMethodMeta();
+        String command = ctx.getCommand();
 
         String arg0  = !rawArgs.isEmpty() ? rawArgs.get(0) : "";
         String arg1  = rawArgs.size() > 1 ? rawArgs.get(1) : "";
         String arg2  = rawArgs.size() > 2 ? rawArgs.get(2) : "";
         String alias = arg2.contains("|") ? arg2.split("\\|")[0] : "";
 
-        methodMeta.addStatement(new DslStatement(command, Arrays.asList(arg0, arg1, arg2, "", alias)));
+
+        DslStatement newDslStatement = new DslStatement(command, Arrays.asList(arg0, arg1, arg2, "", alias));
+        methodMeta.addStatement(newDslStatement);
         LogPrinter.info("[join] methodMeta=" + methodMeta);
 
-
-        findRepoMetaValidProc.validate(methodMeta);
+        dslCommandProcessorValidStep.execute(new DslCommandProcValidContext(newDslStatement, ctx.getClassName(), ctx.getMethodName(), ctx.getLineNumber()));
 
     }
 
-    private void processDefault(String command, List<String> rawArgs, MethodMeta methodMeta) {
-        methodMeta.addStatement(new DslStatement(command, rawArgs));
+    private void processDefault(DslCommandProcContext ctx) {
+        MethodMeta methodMeta = ctx.getMethodMeta();
+        String command = ctx.getCommand();
+        List<String> rawArgs = ctx.getRawArgs();
+
+        DslStatement newDslStatement = new DslStatement(command, rawArgs);
+
+        methodMeta.addStatement(newDslStatement);
         LogPrinter.info("[DslCommandProcStep] command=" + command + " rawArgs=" + rawArgs);
 
 
 
+
+        dslCommandProcessorValidStep.execute(new DslCommandProcValidContext
+                (newDslStatement, ctx.getClassName(), ctx.getMethodName(), ctx.getLineNumber()));
+
         if (TARGET_COMMANDS.contains(command) && !rawArgs.isEmpty()) {
-            findRepoMetaValidProc.validate(methodMeta);
+
+
             methodMeta.setTargetType(rawArgs.get(0).replace(".class", ""));
         } else if ("mapTarget".equals(command) && !rawArgs.isEmpty()) {
+
             methodMeta.setTargetType(rawArgs.get(0).replace(".class", ""));
         }
     }

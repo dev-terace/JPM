@@ -20,7 +20,7 @@ public interface ErrorTracker {
     ErrorTracker setMethodName(String methodName);
 
     ErrorTracker setChainMethodName(String chainMethodName);
-
+    ErrorTracker setLineNumber(int lineNumber);
     ErrorTracker setTrees(Trees trees);
 
     ErrorTracker setErrorElement(Element element);
@@ -28,7 +28,8 @@ public interface ErrorTracker {
     ErrorTracker setExpression(String expression);
 
     // --- Add Error Info ---
-    ErrorTracker addErrorInfo(ErrorCode err);
+    void addErrorInfo(ErrorCode err);
+    void addErrorInfo(ErrorInfo errorInfo);
 
     // --- Getter Methods ---
     ErrorCode getErr();

@@ -16,7 +16,7 @@ public abstract class ErrorInfo {
     @Nullable public abstract String getChainMethodName();
     @Nullable public abstract String getFieldName();
     @Nullable public abstract Element getErrorElement();
-
+    @Nullable public abstract Integer getLineNumber();
     public static ImmutableErrorInfo.Builder builder() {
         return ImmutableErrorInfo.builder();
     }
