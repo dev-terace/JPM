@@ -1,34 +1,22 @@
 package io.jpm.api;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class JpmAbstractQuerySegment {
 
     /**
      * 사용자가 target.id 처럼 필드에 접근할 수 있게 해주는 더미 객체입니다.
      */
-
-
-
-
-
-    public static Raw r(Object obj) { return new Raw(obj); }
-    public static <E, R> Raw r(MFieldRef<E, R> fieldRef) { return new Raw(fieldRef); }
-
-
-
+    public static RawResult r(Object obj) { return new RawResult(obj); }
+    public static <E, R> RawResult r(MFieldRef<E, R> fieldRef) { return new RawResult(fieldRef); }
 
     public static Quoted q(String val) { return new Quoted(val); }
-
 
     public static Bind b(String val) { return new Bind(val); }
     public static <E, R> Bind b(MFieldRef<E, R> fieldRef) { return new Bind(fieldRef); }
 
-
-
-
-
-    public static class AliasedField<E, R> {
+    public static class AliasedField<E, R extends MField<?>> implements SelectRawResultArg {
 
         public final String tableAlias;   // u1
         public final MFieldRef<E, R> fieldRef;
@@ -48,17 +36,35 @@ public abstract class JpmAbstractQuerySegment {
     }
 
     // 2. 사용자가 호출할 col 메서드 (정적 메서드로 선언하여 어디서든 사용)
-    public static <E, R> AliasedField<E, R> col(String alias, MFieldRef<E, R> fieldRef) {
+    public static <E, R extends MField<?>> AliasedField<E, R> col(String alias, MFieldRef<E, R> fieldRef) {
         return new AliasedField<>(alias, fieldRef, null);
     }
 
-
     // ★ 1. 메서드 참조(::)를 받기 위한 함수형 인터페이스 정의
     @FunctionalInterface
-    public interface MFieldRef<E, R> {
+    public interface MFieldRef<E, R> extends Function<E, R>, SelectRawResultArg {
+
+
+        @Override
         R apply(E entity);
+
+        default R getField() {
+            return apply(null);
+        }
     }
 
+
+    public interface SelectRawResultArg {}
+
+    public static class SelectRawResultObject implements SelectRawResultArg {
+
+    }
+
+    public static SelectRawResultObject sr(String obj, Class<?> classType){return new SelectRawResultObject();}
+    public static <E, R extends MField<?>> MFieldRef<E, R> sr(MFieldRef<E, R> ref) {
+        return ref;
+    }
+    public static SelectRawResultObject sr(IArg obj){return new SelectRawResultObject();}
 
 
 
@@ -66,22 +72,27 @@ public abstract class JpmAbstractQuerySegment {
     // --- Selectable 구현 ---
     // =======================================================
 
-    public void select(Object... cols) {}
+
     // [수정] 조인된 다른 엔티티의 컬럼도 select 할 수 있도록 <?> 로 변경
 
     @SafeVarargs
     public final <E, R> void select(MFieldRef<E, R>... fieldRefs) {}
 
 
-    public final  void select(AliasedField<?, ?>... aliasedFields) {
-        // 파서에서 aliasedFields를 순회하며 "alias:MEntity::getMethod" 형태로 저장
-    }
+    public final  void select(AliasedField<?, ?>... aliasedFields) {}
 
     public void selectRaw(String rawSqls) {}
 
     @SafeVarargs
     public final <E, R> void selectRaw(String rawSqls, MFieldRef<E, R>... fieldRefs) {}
+
+
+
     public final <E, R> void selectRaw(String rawSqls, AliasedField<?, ?>... aliasedFields) {}
+
+    public final void selectRawResult(String rawSqls, SelectRawResultArg... field) {};
+
+
 
     public void from(Class<?> entityClass) {}
     public void from(String table) {}
@@ -93,16 +104,9 @@ public abstract class JpmAbstractQuerySegment {
     // --- Conditional 구현 ---
     // =======================================================
 
-
     public void where(String cond) {}
     public void whereExistsGroup() {}
     public void whereNotExistsGroup() {}
-
-
-
-
-
-
 
     // [수정] 모든 엔티티에 대해 조건절을 걸 수 있도록 제네릭 <E> 사용
     public <E, R> void where(MFieldRef<E, R> fieldRef, String op, Object value) {}
@@ -171,6 +175,9 @@ public abstract class JpmAbstractQuerySegment {
     public void insertInto(Class<?> entityClass) {}
     public void update(Class<?> entityClass) {}
     public void deleteFrom(Class<?> entityClass) {}
+
+
+
 
 
     // [수정] UPDATE, INSERT는 대상 테이블(T)에 종속적이지만 확장성을 고려해 <E>로 엽니다.
@@ -257,12 +264,14 @@ public abstract class JpmAbstractQuerySegment {
 
 
 
+/*
 
     @FunctionalInterface
     public interface segmentAction<E> {
         // 모든 메서드 참조를 수용할 수 있는 느슨한 시그니처
         void apply(E segment, Object... args);
     }
+*/
 
 
 

@@ -1,11 +1,14 @@
 package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node;
 
+import groovy.util.logging.Log;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SelectNode implements SqlNode {
     private final List<String> columns;
@@ -22,10 +25,28 @@ public class SelectNode implements SqlNode {
     @Override
     public void apply(BuildContext ctx) {
         List<String> resolved = new ArrayList<>();
+
+
+
         for (String col : columns) {
 
             resolved.add(columnResolver.resolve(col, ctx));
         }
+
+
+
+
+        boolean isContainAlias = columns.stream().anyMatch(col -> col.contains("."));
+
+        if(isContainAlias)
+        {
+            resolved = columnResolver.normalizeColumnName(resolved);
+            LogPrinter.info("[SelectNode] resolved: " + resolved);
+        }
+
+
+
+
         ctx.setAction("SELECT");
         // 덮어쓰기 대신 누적
         if (ctx.getColumns().isEmpty()) {
@@ -34,6 +55,8 @@ public class SelectNode implements SqlNode {
             ctx.setColumns(ctx.getColumns() + ", " + String.join(", ", resolved));
         }
     }
+
+
 
 
 

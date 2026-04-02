@@ -104,8 +104,16 @@ public class ErrorTrackerImpl implements ErrorTracker {
     public void addErrorInfo(ErrorCode err) {
         this.err = err; // 현재 임시 상태 업데이트
 
-        LogPrinter.info("addErrorInfo chainMethod: " + chainMethodName);
+
         errorInfos.add(ErrorInfo.builder()
+                .chainMethodName(chainMethodName)
+                .fieldName(fieldName)
+                .className(className)
+                .err(err)
+                .methodName(methodName)
+                .build());
+
+        LogPrinter.info("addErrorInfo : " + ErrorInfo.builder()
                 .chainMethodName(chainMethodName)
                 .fieldName(fieldName)
                 .className(className)

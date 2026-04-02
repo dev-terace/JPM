@@ -1,5 +1,7 @@
 package io.jpm.core.jpm_repository.domain.model;
 
+import io.jpm.common.utils.LogPrinter;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,23 @@ public class ResultMapMeta {
             } else if ("mapResult".equals(command) && args.size() >= 2) {
                 meta.resultMappings.add(new FieldMapping(args.get(0), args.get(1)));
             }
-            // 연관관계 매핑 처리
+            else if("selectRawResult".equals(command)) {
+                LogPrinter.info("Select Raw Result : " + args.toString());
+               /* meta.resultMappings.add(new FieldMapping(snakeToCamel(args.get(1)), args.get(1)));*/
+
+                int partIdx = 1;
+                for (String part : splitSelectRawSql(args.get(0))) {
+                    if (part.toUpperCase().contains(" AS ")) {
+                        // 특정 프로세스
+
+                        String AsName = part.split(" AS ")[1];
+                        meta.resultMappings.add(new FieldMapping(snakeToCamel(AsName), AsName));
+                    }
+                }
+
+
+            }
+
             else if ("mapAssociation".equals(command) || "mapCollection".equals(command)) {
 
                 String fieldName = args.get(0);
@@ -66,6 +84,51 @@ public class ResultMapMeta {
     private static String camelToSnake(String str) {
         if (str == null) return null;
         return str.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+    }
+
+
+    private static  List<String> splitSelectRawSql(String sql) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0;
+        StringBuilder current = new StringBuilder();
+
+        for (char c : sql.toCharArray()) {
+            if (c == '(') depth++;
+            else if (c == ')') depth--;
+            else if (c == ',' && depth == 0) {
+                parts.add(current.toString().trim());
+                current = new StringBuilder();
+                continue;
+            }
+            current.append(c);
+        }
+
+        if (current.length() > 0) {
+            parts.add(current.toString().trim());
+        }
+
+        return parts;
+    }
+
+
+
+    private static String snakeToCamel(String str) {
+        if (str == null) return null;
+        StringBuilder result = new StringBuilder();
+        boolean nextUpper = false;
+        for (char c : str.toCharArray()) {
+            if (c == '_') {
+                nextUpper = true; // 다음 글자는 대문자로
+            } else {
+                if (nextUpper) {
+                    result.append(Character.toUpperCase(c));
+                    nextUpper = false;
+                } else {
+                    result.append(c);
+                }
+            }
+        }
+        return result.toString();
     }
 
     // ==========================================

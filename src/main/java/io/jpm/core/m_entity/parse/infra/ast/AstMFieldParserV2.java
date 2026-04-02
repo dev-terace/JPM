@@ -4,6 +4,7 @@ package io.jpm.core.m_entity.parse.infra.ast;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.Trees;
+import io.jpm.common.utils.LogPrinter;
 
 import javax.lang.model.element.VariableElement;
 import java.util.ArrayList;
@@ -39,13 +40,42 @@ public class AstMFieldParserV2 {
         // 1. Element로부터 컴파일러가 만들어둔 구문 트리(AST)를 가져옵니다.
         Tree pathTree = trees.getTree(fieldElement);
 
+
         if (pathTree instanceof VariableTree) {
             VariableTree varTree = (VariableTree) pathTree;
 
             // 2. 변수명 저장 (기본 컬럼명)
             columnInfo.add(new Pair("fieldName", varTree.getName().toString()));
 
-            // 3. 변수 초기화 블록 (.builder()...) 가져오기
+
+
+
+            // 3. 제네릭 타입 파라미터 추출 (MField<MFieldType.UUID_V_7>)
+            Tree typeTree = varTree.getType();
+            if (typeTree instanceof ParameterizedTypeTree) {
+                ParameterizedTypeTree paramType = (ParameterizedTypeTree) typeTree;
+
+                if (!paramType.getTypeArguments().isEmpty()) {
+                    Tree typeArg = paramType.getTypeArguments().get(0);
+
+                    // MFieldType.UUID_V_7 형태
+                    if (typeArg instanceof MemberSelectTree) {
+                        MemberSelectTree memberSelect = (MemberSelectTree) typeArg;
+                        String typeClass = memberSelect.getExpression().toString(); // MFieldType
+                        String typeName = memberSelect.getIdentifier().toString();  // UUID_V_7
+
+                        columnInfo.add(new Pair("type", typeName));
+
+                        LogPrinter.info("Generic type: " + typeClass + "." + typeName);
+                    }
+                }
+            }
+
+
+
+
+
+            // 4. 변수 초기화 블록 (.builder()...) 가져오기
             ExpressionTree initializer = varTree.getInitializer();
             if (initializer != null) {
                 parseMethodChain(initializer, columnInfo);
@@ -69,11 +99,13 @@ public class AstMFieldParserV2 {
                 String methodName = memberSelect.getIdentifier().toString();
 
                 // builder()와 build()는 제외하고 실제 설정값만 추출
-                if (!"builder".equals(methodName) && !"build".equals(methodName)) {
+                if (!"builder".contains(methodName) && !"build".equals(methodName)) {
 
                     String argValue = extractArgValue(methodCall);
 
                     info.add(new Pair(methodName, argValue));
+
+                    LogPrinter.info("Method " + methodName + " has arguments " + argValue);
                 }
 
                 // 다음 체인(Scope)으로 이동 (재귀)

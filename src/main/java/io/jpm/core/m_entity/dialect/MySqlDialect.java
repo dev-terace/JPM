@@ -1,6 +1,6 @@
 package io.jpm.core.m_entity.dialect;
 
-import io.jpm.api.MFieldType;
+import io.jpm.api.m_field_type.MFieldTypeEnum;
 import io.jpm.core.m_entity.generator.domain.vo.DDLColumnMetadata;
 import io.jpm.core.m_entity.generator.domain.vo.DDLTableMetadata;
 
@@ -11,13 +11,13 @@ import java.util.List;
 public class MySqlDialect implements SqlDialect {
 
     @Override
-    public String getField(MFieldType fieldType) {
+    public String getField(MFieldTypeEnum fieldType) {
 
 
-        if(fieldType.equals(MFieldType.JSON)) {
+        if(fieldType.equals(MFieldTypeEnum.JSON)) {
             return "JSON";
         }
-        else if(fieldType.equals(MFieldType.UUID_V_7)) {
+        else if(fieldType.equals(MFieldTypeEnum.UUID_V_7)) {
 
             return "CHAR(36)";
         }

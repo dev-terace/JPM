@@ -1,6 +1,6 @@
 package io.jpm.api;
 
-public class Quoted implements IArg {
+public class Quoted  implements IArg, JpmAbstractQuerySegment.SelectRawResultArg {
     public String val;
     public Object origin;
     public Quoted(Object v) {

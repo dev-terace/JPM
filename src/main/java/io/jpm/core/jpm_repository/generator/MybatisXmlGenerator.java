@@ -235,11 +235,11 @@ public class MybatisXmlGenerator {
                     if (mj.isList()) {
                         xml.append("        <collection property=\"").append(propName)
                                 .append("\" ofType=\"").append(targetJavaType)
-                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append(".\"/>\n");
+                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append("_\"/>\n");
                     } else {
                         xml.append("        <association property=\"").append(propName)
                                 .append("\" javaType=\"").append(targetJavaType)
-                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append(".\"/>\n");
+                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append("_\"/>\n");
                     }
                 }
 

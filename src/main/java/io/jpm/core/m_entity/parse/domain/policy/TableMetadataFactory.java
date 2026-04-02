@@ -2,7 +2,7 @@ package io.jpm.core.m_entity.parse.domain.policy;
 
 import io.jpm.config.AppConfig;
 import io.jpm.api.MField;
-import io.jpm.api.MFieldType;
+import io.jpm.api.m_field_type.MFieldTypeEnum;
 import io.jpm.core.m_entity.dialect.SqlDialect;
 import io.jpm.core.m_entity.generator.domain.vo.DDLColumnMetadata;
 import io.jpm.core.m_entity.generator.domain.vo.DDLTableMetadata;
@@ -47,7 +47,7 @@ public class TableMetadataFactory {
         String type = resolveSqlType(var);
         String finalDefaultValue = resolveDefaultValue(var);
         boolean finalNullable = !var.isPrimaryKey() && var.isNullable();
-        boolean isUUIDV7 = MFieldType.UUID_V_7.equals(var.getType());
+        boolean isUUIDV7 = MFieldTypeEnum.UUID_V_7.equals(var.getType());
 
         DDLColumnMetadata column = new DDLColumnMetadata.Builder(var.getName(), type)
                 .primaryKey(var.isPrimaryKey())
@@ -70,16 +70,16 @@ public class TableMetadataFactory {
      */
     private static String resolveSqlType(MField var) {
         String type = MFieldToSqlType.resolveType(var);
-        if (var.getType() == MFieldType.STRING) {
+        if (var.getType() == MFieldTypeEnum.STRING) {
             return "VARCHAR(" + var.getLength() + ")";
         }
 
-        if(var.getType() == MFieldType.JSON) {
-            return dialect.getField(MFieldType.JSON);
+        if(var.getType() == MFieldTypeEnum.JSON) {
+            return dialect.getField(MFieldTypeEnum.JSON);
         }
 
-        if(var.getType() == MFieldType.UUID_V_7) {
-            return dialect.getField(MFieldType.UUID_V_7);
+        if(var.getType() == MFieldTypeEnum.UUID_V_7) {
+            return dialect.getField(MFieldTypeEnum.UUID_V_7);
         }
 
         return type;
@@ -100,7 +100,7 @@ public class TableMetadataFactory {
 
         if (!rawDefault.trim().toUpperCase().startsWith("DEFAULT")) {
 
-            if(var.getType() == MFieldType.STRING) {
+            if(var.getType() == MFieldTypeEnum.STRING) {
                 String clean = rawDefault.trim().replaceAll("^'|'$", "");
                 rawDefault = "'" + clean.replace("'", "''") + "'";
             }
@@ -116,7 +116,7 @@ public class TableMetadataFactory {
      */
     // 🚨 [수정] 파라미터로 받은 맵을 사용하여 조회하도록 변경
     private static void applyForeignKey(DDLColumnMetadata column, MField var, Map<String, MEntityInfo> globalEntityMap) {
-        if (var.getType() == MFieldType.FK) {
+        if (var.getType() == MFieldTypeEnum.FK) {
             String targetClassName = var.getParentClassName();
 
             // 기존의 빈 static map 대신 인자로 넘어온 map 사용

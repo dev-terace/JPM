@@ -1,4 +1,4 @@
-package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step;
+package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core;
 
 import io.jpm.api.MqAssociation;
 import io.jpm.api.MqCollection;
@@ -119,14 +119,10 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
         methodMeta.addStatement(newDslStatement);
         LogPrinter.info("[DslCommandProcStep] command=" + command + " rawArgs=" + rawArgs);
 
-
-
-
         dslCommandProcessorValidStep.execute(new DslCommandProcValidContext
                 (newDslStatement, ctx.getClassName(), ctx.getMethodName(), ctx.getLineNumber()));
 
         if (TARGET_COMMANDS.contains(command) && !rawArgs.isEmpty()) {
-
 
             methodMeta.setTargetType(rawArgs.get(0).replace(".class", ""));
         } else if ("mapTarget".equals(command) && !rawArgs.isEmpty()) {

@@ -15,12 +15,12 @@ import io.jpm.core.jpm_data_source_registry.JpmDataSourceRegistry;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DSLKeywords;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcStep;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcessorValidStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core.DslCommandProcStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core.DslCommandProcessorValidStep;
 import io.jpm.core.jpm_repository.pipeline.JpmRepositoryPipeline;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractorValueResolver;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInlinerStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.SegmentInlinerStep;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 import io.jpm.core.m_entity.processor.MEntityPipelineV2;
@@ -160,6 +160,8 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
             ColumnResolver columnResolver = new ColumnResolver(cache.getRepoMetaRegistry());
 
+
+            LocalVariableCollector localVariableCollector = new LocalVariableCollector(new ArgumentTokenExtractorValueResolver(repoMetaRegistry));
             return ImmutableGlobalRegistry.builder()
                     .options(safeOptions)
                     .tokenExtractor(argumentTokenExtractor)
@@ -167,9 +169,9 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
                     .mapParamRegistry(new MapParamRegistryImpl())
                     .findRepoMetaValidProc(new DslCommandProcessorValidStep(cache, errorTracker, columnResolver))
                     .segmentInliner(new SegmentInlinerStep(argumentTokenExtractor, commandProcV2
-                                    ,new AstContext(processingEnv), DSLKeywords.getDSLKeywords(), errorTracker)
+                                    ,new AstContext(processingEnv), DSLKeywords.getDSLKeywords(), errorTracker, localVariableCollector)
                     )
-                    .localVariableCollector(new LocalVariableCollector(new ArgumentTokenExtractorValueResolver(repoMetaRegistry)))
+                    .localVariableCollector(localVariableCollector)
 
                     .errorTracker(errorTracker)
                     .build();

@@ -58,6 +58,7 @@ public class SqlAssemblerUtil {
 
             appendWhere(sql, ctx);
             appendClause(sql, "\nGROUP BY ", ctx.getGroupBys());
+            appendHaving(sql, ctx);
             appendClause(sql, "\nORDER BY ", ctx.getOrderBys());
 
             if (!ctx.getLimit().isEmpty())  sql.append("\nLIMIT ").append(ctx.getLimit());
@@ -128,6 +129,14 @@ public class SqlAssemblerUtil {
             sql.append("\nWHERE ").append(String.join(" AND ", ctx.getWheres()));
         }
     }
+
+    private static void appendHaving(StringBuilder sql, BuildContext ctx) {
+        if (!ctx.getHavingAll().isEmpty()) {
+            sql.append("\nHAVING ").append(String.join(" AND ", ctx.getHavingAll()));
+        }
+    }
+
+
 
     private static void appendClause(StringBuilder sql, String prefix, java.util.List<String> items) {
         if (!items.isEmpty()) {

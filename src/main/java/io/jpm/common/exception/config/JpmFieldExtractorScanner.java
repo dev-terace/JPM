@@ -36,7 +36,19 @@ public class JpmFieldExtractorScanner extends TreePathScanner<Void, Void> {
     public Void visitVariable(VariableTree node, Void p) {
         try {
             // ✅ MField 타입 필드만 스캔
-            String typeName = node.getType().toString();
+
+            Tree typeTree = node.getType();
+            String typeName;
+
+            if (typeTree instanceof ParameterizedTypeTree) {
+                typeName = ((ParameterizedTypeTree) typeTree).getType().toString();
+            } else {
+                typeName = typeTree.toString();
+            }
+
+
+
+
             if (!typeName.equals("MField")) return super.visitVariable(node, p);
 
             String fieldName = node.getName().toString();
@@ -53,7 +65,11 @@ public class JpmFieldExtractorScanner extends TreePathScanner<Void, Void> {
                     .build();
 
             // ✅ 캐시에 저장
+
+
+
             cache.registerFieldLocation(currentClassName, fieldName, loc);
+
 
         } catch (Exception e) {
             LogPrinter.exceptionInfo(e);

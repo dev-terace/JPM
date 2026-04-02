@@ -1,18 +1,20 @@
-package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support;
+package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step;
 
 import com.sun.source.tree.*;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.AstContext;
-import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.config.ast.Step;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.DslCommandProcContext;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.SegmentInlinerContext;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.SegmentInlinerProcContext;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core.DslCommandProcStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.AstMethodTree;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.FindFqnUtil;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.TreePositionUtil;
 
 
@@ -31,7 +33,7 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
     private final AstContext                   astContext;
     private final Set<String>                  dslKeywords;
     private final ErrorTracker errorTracker;
-
+    private final LocalVariableCollector localVariableCollector;
     private static final List<String> JOIN_COMMANDS      = Arrays.asList("innerJoin", "leftJoin", "rightJoin");
 
 
@@ -39,8 +41,8 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
                               DslCommandProcStep dslCommandProcStep,
                               AstContext astContext,
                               Set<String> dslKeywords,
-                              ErrorTracker errorTracker
-
+                              ErrorTracker errorTracker,
+                              LocalVariableCollector localVariableCollector
 
                               ) {
         this.tokenExtractor   = tokenExtractor;
@@ -48,6 +50,7 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
         this.astContext       = astContext;
         this.dslKeywords      = dslKeywords;
         this.errorTracker   = errorTracker;
+        this.localVariableCollector = localVariableCollector;
 
 
     }
@@ -80,8 +83,10 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
 
 
             List<String> segmentArgs = passedArgs.subList(2, passedArgs.size());
-            int lineNumber = TreePositionUtil.getLineNumber(astContext.getTrees(), call, repoElement);
-            inline(methodMeta, segmentArgs, segmentClassName, segmentMethodName, lineNumber);
+
+
+
+            inline(methodMeta, segmentArgs, segmentClassName, segmentMethodName);
             LogPrinter.info("[PARSE] methodMeta=" + methodMeta);
         } catch (Exception e) {
             for (StackTraceElement ste : e.getStackTrace()) LogPrinter.info("[STACK] " + ste);
@@ -99,8 +104,8 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
     private void inline(MethodMeta methodMeta,
                         List<String> passedArgs,
                         String segmentClassName,
-                        String segmentMethodName,
-                        int lineNumber
+                        String segmentMethodName
+
     ) {
 
         LogPrinter.info("[INLINE] segmentClassName= " + segmentClassName);
@@ -127,7 +132,7 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
 
             processBody(new SegmentInlinerProcContext
                     (methodTree.getBody(), argContext, methodMeta
-                    , segmentClassName, segmentMethodName, lineNumber
+                    , segmentClassName, segmentMethodName, segmentElement
 
                     ));
             break;
@@ -155,10 +160,9 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
     private void processBody(SegmentInlinerProcContext ctx) {
         BlockTree body = ctx.getBody();
 
-
         if (body == null) return;
 
-
+        localVariableCollector.collect(body, ctx.getArgContext());
 
         for (StatementTree stmt : body.getStatements()) {
             if (!(stmt instanceof ExpressionStatementTree)) continue;
@@ -184,10 +188,11 @@ public class SegmentInlinerStep implements Step<SegmentInlinerContext> {
             List<String> rawArgs = tokenExtractor.extract(call, argContext);
             LogPrinter.info("[SegmentInliner] rawArgs: " + rawArgs);
 
-
-
+            int lineNumber = TreePositionUtil.getLineNumber(astContext.getTrees(), call, ctx.getSegmentElement());
             dslCommandProcStep.execute(new DslCommandProcContext(command, rawArgs, methodMeta
-                    , ctx.getSegmentClassName(), ctx.getSegmentMethodName(), ctx.getLineNumber()));
+                    , ctx.getSegmentClassName(), ctx.getSegmentMethodName(), lineNumber));
         }
     }
+
+
 }

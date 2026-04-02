@@ -1,6 +1,7 @@
 package io.jpm.core.m_entity.dialect;
 
-import io.jpm.api.MFieldType;
+import io.jpm.api.m_field_type.MFieldType;
+import io.jpm.api.m_field_type.MFieldTypeEnum;
 import io.jpm.core.m_entity.generator.domain.vo.DDLColumnMetadata;
 import io.jpm.core.m_entity.generator.domain.vo.DDLTableMetadata;
 
@@ -9,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface SqlDialect {
-    String getField(MFieldType fieldType);
+    String getField(MFieldTypeEnum fieldType);
 
     List<String> createDropTableSql(DDLTableMetadata table);
     String createTableDefinitionSql(DDLTableMetadata table);

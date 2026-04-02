@@ -29,6 +29,7 @@ public class ArgumentTokenExtractorValueResolver {
         if (expr == null) return "";
 
 
+
         try {
             if (expr instanceof MethodInvocationTree) {
                 return resolveMethodInvocation((MethodInvocationTree) expr, mapParamRegistryImpl, resolveToColumn);
@@ -76,7 +77,12 @@ public class ArgumentTokenExtractorValueResolver {
                     String inner = resolveInner(args, mapParamRegistryImpl, resolveToColumn);
                     return "'" + inner + "'";
                 }
+                case "sr": {
+                    return args.isEmpty() ? "" : resolve(args.get(0), mapParamRegistryImpl, false, resolveToColumn);
+                }
                 case "b": {
+
+                    LogPrinter.info("m call : " + mapParamRegistryImpl);
                     String inner = resolveInner(args, mapParamRegistryImpl, resolveToColumn);
                     return "#{" + inner + "}";
                 }
@@ -84,8 +90,6 @@ public class ArgumentTokenExtractorValueResolver {
                     ExpressionTree methodSel = mCall.getMethodSelect();
                     if (!(methodSel instanceof MemberSelectTree)) return "";
                     ExpressionTree scope = ((MemberSelectTree) methodSel).getExpression();
-
-
 
                     LogPrinter.info("[resolveMethodInvocation] " + resolve(scope, mapParamRegistryImpl, false, true)
                             + " AS "

@@ -1,4 +1,4 @@
-package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step;
+package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core;
 
 import io.jpm.common.exception.ErrorCode;
 import io.jpm.common.exception.ErrorInfo;
@@ -14,22 +14,20 @@ import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DslStatement;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
-import io.jpm.core.jpm_repository.domain.model.MethodMeta;
-import io.jpm.core.jpm_repository.valid.policy.JoinNodeValidatorStep;
 
 
 import java.util.Arrays;
-import java.util.HashSet;
+
 import java.util.List;
-import java.util.Set;
+
 
 
 public class DslCommandProcessorValidStep implements Step<DslCommandProcValidContext> {
 
-    private static final List<String> CONDITION_COMMANDS = Arrays.asList("where", "and", "or");
+    private static final List<String> CONDITION_COMMANDS = Arrays.asList("where", "and", "or", "having");
     private static final List<String> UPDATE_COMMANDS    = Arrays.asList("set", "setRaw");
     private static final List<String> JOIN_COMMANDS      = Arrays.asList("innerJoin", "leftJoin", "rightJoin");
-
+    private static final String SELECT_RAW_COMMAND = "selectRaw";
     private final RepoMetaRegistry repoMetaRegistry;
     private final EntityRelationRegistry entityRelationRegistry;
     private final ErrorTracker errorTracker;
@@ -67,17 +65,17 @@ public class DslCommandProcessorValidStep implements Step<DslCommandProcValidCon
     private void validateStatement(DslStatement stmt, DslCommandProcValidContext ctx) {
         String command = stmt.getCommand();
 
-
         ctx.setChainMethodName(command);
 
-
         if (CONDITION_COMMANDS.contains(command)) {
-            LogPrinter.info("Validating command, " + command + ", "+ctx.getLineNumber());
             validateCondition(stmt, ctx);
         } else if (UPDATE_COMMANDS.contains(command)) {
             validateUpdate(stmt, ctx);
         } else if (JOIN_COMMANDS.contains(command)) {
             validateJoin(stmt, ctx);
+        }
+        else if(SELECT_RAW_COMMAND.equals(command)) {
+            validateSelectRaw(stmt, ctx);
         }
 
         if (stmt.getSubStatements() != null) {
@@ -87,6 +85,8 @@ public class DslCommandProcessorValidStep implements Step<DslCommandProcValidCon
                 validateStatement(sub, ctx);
             }
         }
+
+
     }
 
     // ==========================================
@@ -95,6 +95,13 @@ public class DslCommandProcessorValidStep implements Step<DslCommandProcValidCon
     // arg(1) = "="
     // arg(2) = "2" or "'John'"
     // ==========================================
+
+    private void validateSelectRaw(DslStatement stmt, DslCommandProcValidContext ctx) {
+        String raws = stmt.getArg(0);
+
+    }
+
+
     private void validateCondition(DslStatement stmt, DslCommandProcValidContext ctx) {
 
         LogPrinter.info("validateCondition stmt: " + stmt.toString());
@@ -112,7 +119,7 @@ public class DslCommandProcessorValidStep implements Step<DslCommandProcValidCon
 
         checkTypeMismatch(fieldType, valueType, ctx);
 
-        LogPrinter.info("chainMethodName: " + errorTracker.getChainMethodName() + ", errorTracker className: "+errorTracker.getClassName() + ", errorTracker methodName: "+errorTracker.getMethodName());
+        LogPrinter.info("checkTypeMismatch: fieldType " + fieldType + ", valueType: "+valueType + ", ctx: "+ctx.toString());
     }
 
     // ==========================================

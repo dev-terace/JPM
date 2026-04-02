@@ -38,8 +38,10 @@ public class LocalVariableCollector {
                     argContext.bind(varName, resolved);
                     LogPrinter.info("[LocalVar] " + varName + " = " + resolved);
                 }
-            } else {
-                argContext.bind(varName, initializer.toString());
+            } else if (initializer instanceof LiteralTree){
+                Object value = ((LiteralTree) initializer).getValue();
+
+                argContext.bind(varName, value.toString());
                 LogPrinter.info("[LocalVar] " + varName + " = " + initializer);
             }
         }

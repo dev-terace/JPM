@@ -1,0 +1,51 @@
+package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node;
+
+import io.jpm.common.utils.LogPrinter;
+import io.jpm.core.jpm_repository.domain.enums.GroupType;
+import io.jpm.core.jpm_repository.domain.model.BuildContext;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class HavingClauseNode implements SqlNode {
+
+    private final GroupNode root = new GroupNode(GroupType.AND);
+
+    public void addCondition(SqlNode condition) {
+
+        root.add(condition);
+    }
+
+    public void addGroup(GroupNode group) {
+        root.add(group);
+    }
+
+    public boolean isEmpty() {
+        return root.isEmpty();
+    }
+
+    @Override
+    public void apply(BuildContext ctx) {
+
+
+
+        if (!isEmpty()) {
+            // Binder의 wheres 리스트에 조립된 SQL을 통째로 넣음
+
+            ctx.getHavingAll().add(this.toSql(ctx));
+        }
+    }
+
+    @Override
+    public String toSql(BuildContext ctx) {
+        if (root.isEmpty()) return "";
+        // 최하위 root는 괄호를 제거하고 "WHERE " 접두사만 붙임
+
+        String content = root.toSql(ctx);
+        // root.toSql 결과가 "( A AND B )" 형태라면 가장 바깥 괄호는 제거하는게 깔끔함
+        if (content.startsWith("(") && content.endsWith(")")) {
+            content = content.substring(1, content.length() - 1).trim();
+        }
+        return content;
+    }
+}

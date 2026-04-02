@@ -1,6 +1,6 @@
 package io.jpm.api;
 
-public class Bind implements IArg {
+public class Bind  implements IArg, JpmAbstractQuerySegment.SelectRawResultArg {
     public String val;
     public Object origin;
     public Bind(Object v) {

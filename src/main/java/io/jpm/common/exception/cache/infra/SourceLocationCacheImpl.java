@@ -43,6 +43,9 @@ public class SourceLocationCacheImpl implements SourceLocationCache {
 
 
     public FieldSourceLocation popFieldSourceLocation(String className, String fieldName) {
+
+        LogPrinter.info("field location map: " + fieldLocationMap);
+
         Map<String, FieldSourceLocation> innerMap = fieldLocationMap.get(className);
         if (innerMap == null) return null;
 
@@ -52,6 +55,8 @@ public class SourceLocationCacheImpl implements SourceLocationCache {
         if (loc == null) {
             throw new RuntimeException(String.format("FieldSourceLocation not found for %s.%s", className, fieldName));
         }
+
+
 
 
         return loc;

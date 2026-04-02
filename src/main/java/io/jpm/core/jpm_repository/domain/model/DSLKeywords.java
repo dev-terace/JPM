@@ -13,8 +13,9 @@ public class DSLKeywords {
             "orderBy", "groupBy", "limit", "offset", "sql", "selectRaw", "orderByRaw", "groupByRaw",
             "whereInGroup", "group", "fromGroup", "selectCase",
             "mapTarget", "mapId", "mapResult", "mapJoin", "innerJoinGroup", "leftJoinGroup",
-            "whereExistsGroup", "whereNotExistsGroup"
-            )));
+            "whereExistsGroup", "whereNotExistsGroup",
+            "having", "havingAnd", "havingOr", "havingGroup", "havingOrGroup", "selectRawResult"
+    )));
 
     public static Set<String> getDSLKeywords()
     {

@@ -81,7 +81,7 @@ public class MParserUtils {
             String methodName = methodCall.getNameAsString();
 
             // builder()와 build()는 제외하고 실제 설정값만 추출
-            if (!"builder".equals(methodName) && !"build".equals(methodName)) {
+            if (!"Builder".equals(methodName) && !"build".equals(methodName)) {
                 String argValue = extractArgValue(methodCall);
                 // 키(메서드명)와 값(인자) 저장
 

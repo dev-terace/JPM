@@ -4,7 +4,7 @@ package io.jpm.core.m_entity.parse.domain.policy;
 
 
 import io.jpm.api.MField;
-import io.jpm.api.MFieldType;
+import io.jpm.api.m_field_type.MFieldTypeEnum;
 import io.jpm.api.OnDeleteType;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.core.m_entity.valid.MFieldValidator;
@@ -22,7 +22,7 @@ public class MObjectFactoryV2 {
         this.validator = new MFieldValidator();
     }
 
-    public MField createMVariableV2(List<AstMFieldParserV2.Pair> pairs, ErrorTracker errorTracker) {
+    public MField<?> createMVariableV2(List<AstMFieldParserV2.Pair> pairs, ErrorTracker errorTracker) {
         MField.Builder builder = MField.builder();
 
         // 1. 변수명(fieldName)을 기본 컬럼명으로 먼저 설정
@@ -34,7 +34,8 @@ public class MObjectFactoryV2 {
             }
         }
 
-        // 2. 메서드 체인 정보 매핑
+        String typeTemp = "";
+
         for (AstMFieldParserV2.Pair pair : pairs) {
             String key = pair.key;
             String val = pair.value;
@@ -46,7 +47,7 @@ public class MObjectFactoryV2 {
                     builder.name(val);
                     break;
                 case "type":
-                    builder.type(MFieldType.valueOf(val.toUpperCase()));
+                    typeTemp = String.valueOf((MFieldTypeEnum.valueOf(val.toUpperCase())));
                     break;
                 case "primaryKey":
                     builder.primaryKey(Boolean.parseBoolean(val));
@@ -83,7 +84,10 @@ public class MObjectFactoryV2 {
         }
 
         // 3. 객체 생성 및 검증
-        MField var = builder.build();
+        MField<?> var = builder.build();
+        if (typeTemp != null) {
+            var.setType(typeTemp);
+        }
 
         // 기존에 분리해두신 Validator를 호출하여 논리 오류 체크
         validator.validate(var, errorTracker);

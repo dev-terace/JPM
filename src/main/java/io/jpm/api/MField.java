@@ -1,75 +1,87 @@
 package io.jpm.api;
 
-import org.immutables.value.Value;
+import io.jpm.api.m_field_type.MFieldType;
+import io.jpm.api.m_field_type.MFieldTypeEnum;
+
 import javax.annotation.Nullable;
 
-@Value.Immutable
-@Value.Style(get = {"get*", "is*"})
-public abstract class MField {
+public class MField<T extends MFieldType> {
 
-    public abstract MFieldType getType();
-    public abstract String getName();
+    private final String name;
+    private final boolean primaryKey;
+    private final boolean autoIncrement;
+    private final boolean nullable;
+    private final String defaultValue;
+    private final int length;
+    private final String parentClassName;
+    private final String onDelete;
+    private final boolean index;
+    private final boolean unique;
 
-    @Value.Default
-    public boolean isPrimaryKey() { return false; }
+    private String type;
 
-    @Value.Default
-    public boolean isAutoIncrement() { return false; }
+    private MField(Builder builder) {
+        this.name = builder.name;
+        this.primaryKey = builder.primaryKey;
+        this.autoIncrement = builder.autoIncrement;
+        this.nullable = builder.nullable;
+        this.defaultValue = builder.defaultValue;
+        this.length = builder.length;
+        this.parentClassName = builder.parentClassName;
+        this.onDelete = builder.onDelete;
+        this.index = builder.index;
+        this.unique = builder.unique;
+    }
 
-    @Value.Default
-    public boolean isNullable() { return true; }
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    @Nullable
-    public abstract String getDefaultValue();
+    public MFieldTypeEnum getType() {
+        return MFieldTypeEnum.valueOf(type);
+    }
 
-    @Value.Default
-    public int getLength() { return 255; }
+    public String getName() { return name; }
+    public boolean isPrimaryKey() { return primaryKey; }
+    public boolean isAutoIncrement() { return autoIncrement; }
+    public boolean isNullable() { return nullable; }
+    @Nullable public String getDefaultValue() { return defaultValue; }
+    public int getLength() { return length; }
+    @Nullable public String getParentClassName() { return parentClassName; }
+    public String getOnDelete() { return onDelete; }
+    public boolean isIndex() { return index; }
+    public boolean isUnique() { return unique; }
 
-    @Nullable
-    public abstract String getParentClassName();
 
-    @Value.Default
-    public String getOnDelete() { return OnDeleteType.NO_ACTION.getSql(); }
-
-    @Value.Default
-    public boolean isIndex() { return false; }
-
-    @Value.Default
-    public boolean isUnique() { return false; }
-
-    // ── Builder 위임 패턴 ────────────────────────
     public static Builder builder() {
         return new Builder();
     }
 
     public static class Builder {
-        // ❌ 이게 문제 - 생성자에서 바로 ImmutableMField.builder() 호출
-        // private final ImmutableMField.Builder delegate = ImmutableMField.builder();
+        private String name;
+        private boolean primaryKey = false;
+        private boolean autoIncrement = false;
+        private boolean nullable = true;
+        private String defaultValue = null;
+        private int length = 255;
+        private String parentClassName = null;
+        private String onDelete = OnDeleteType.NO_ACTION.getSql();
+        private boolean index = false;
+        private boolean unique = false;
 
-        // ✅ 이렇게 lazy하게
-        private ImmutableMField.Builder delegate;
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder primaryKey(boolean val) { this.primaryKey = val; return this; }
+        public Builder autoIncrement(boolean val) { this.autoIncrement = val; return this; }
+        public Builder nullable(boolean val) { this.nullable = val; return this; }
+        public Builder defaultValue(String val) { this.defaultValue = val; return this; }
+        public Builder length(int val) { this.length = val; return this; }
+        public Builder index(boolean val) { this.index = val; return this; }
+        public Builder unique(boolean val) { this.unique = val; return this; }
 
-        private ImmutableMField.Builder delegate() {
-            if (delegate == null) {
-                delegate = ImmutableMField.builder();
-            }
-            return delegate;
-        }
+        public Builder parent(Class<?> clazz) { this.parentClassName = clazz.getSimpleName(); return this; }
+        public Builder parent(String className) { this.parentClassName = className; return this; }
+        public Builder onDelete(OnDeleteType type) { this.onDelete = type.getSql(); return this; }
 
-        public Builder type(MFieldType type) { delegate().type(type); return this; }
-        public Builder name(String name) { delegate().name(name); return this; }
-        public Builder primaryKey(boolean val) { delegate().primaryKey(val); return this; }
-        public Builder autoIncrement(boolean val) { delegate().autoIncrement(val); return this; }
-        public Builder nullable(boolean val) { delegate().nullable(val); return this; }
-        public Builder defaultValue(String val) { delegate().defaultValue(val); return this; }
-        public Builder length(int val) { delegate().length(val); return this; }
-        public Builder index(boolean val) { delegate().index(val); return this; }
-        public Builder unique(boolean val) { delegate().unique(val); return this; }
-
-        public Builder parent(Class<?> clazz) { delegate().parentClassName(clazz.getSimpleName()); return this; }
-        public Builder parent(String className) { delegate().parentClassName(className); return this; }
-        public Builder onDelete(OnDeleteType type) { delegate().onDelete(type.getSql()); return this; }
-
-        public MField build() { return delegate().build(); }
+        public <T extends MFieldType> MField<T> build() { return new MField<>(this); }
     }
 }

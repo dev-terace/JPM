@@ -2,7 +2,7 @@ package io.jpm.core.m_entity.parse.infra;
 
 import io.jpm.api.MEntity;
 import io.jpm.api.MField;
-import io.jpm.api.MFieldType;
+import io.jpm.api.m_field_type.MFieldTypeEnum;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.core.m_entity.parse.domain.policy.MObjectFactoryV2;
@@ -89,7 +89,7 @@ public class MetadataCacheV3 {
                 if (var.isPrimaryKey()) {
                     entityRelationRegistry.registerPkFieldType(String.valueOf(entityName), var.getType().name());
                     entityRelationRegistry.registerPkFieldName(entityName, pkColumnName);
-                } else if (var.getType().equals(MFieldType.FK)) {
+                } else if (var.getType().equals(MFieldTypeEnum.FK)) {
                     String fieldName = extractFkFieldName(fieldRawData);
                     entityRelationRegistry.registerFk(entityName, fieldName, var.getParentClassName());
                 }

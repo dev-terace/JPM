@@ -1,5 +1,6 @@
 package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node;
 
+
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
@@ -22,11 +23,13 @@ public class SelectRawNode implements SqlNode {
     public void apply(BuildContext ctx) {
         String resolved = buildSql(ctx);
         ctx.setAction("SELECT");
+
         if (ctx.getColumns().isEmpty()) {
             ctx.setColumns(resolved);
         } else {
             ctx.setColumns(ctx.getColumns() + ", " + resolved);
         }
+
     }
 
     @Override
@@ -34,9 +37,13 @@ public class SelectRawNode implements SqlNode {
 
     private String buildSql(BuildContext ctx) {
         // 각 arg를 ColumnResolver로 변환 후 %s 자리에 순서대로 주입
-        Object[] resolved = args.stream()
-                .map(arg -> columnResolver.resolve(arg, ctx))
-                .toArray();
-        return String.format(template, resolved);
+
+        List<String> resolved = new ArrayList<>();
+
+        for(String arg : this.args) {
+            resolved.add(this.columnResolver.resolve(arg, ctx));
+        }
+        Object[] resolvedArguments = resolved.toArray();
+        return String.format(template, resolvedArguments);
     }
 }

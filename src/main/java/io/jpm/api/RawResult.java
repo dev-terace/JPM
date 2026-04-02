@@ -1,9 +1,9 @@
 package io.jpm.api;
 
-public class Raw implements IArg {
+public class RawResult implements IArg, JpmAbstractQuerySegment.SelectRawResultArg {
     public String val;
     public Object origin;
-    public Raw(Object v) {
+    public RawResult(Object v) {
         this.origin = v;
         this.val = (v instanceof String) ? (String) v : "___RAW_REF___";
     }

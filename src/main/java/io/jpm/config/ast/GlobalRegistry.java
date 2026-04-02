@@ -5,9 +5,9 @@ import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.AutoDDLPolicy;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcStep;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.SegmentInlinerStep;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.DslCommandProcessorValidStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core.DslCommandProcStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_method_body_step.SegmentInlinerStep;
+import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core.DslCommandProcessorValidStep;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import org.immutables.value.Value;
 

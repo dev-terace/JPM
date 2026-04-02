@@ -7,6 +7,9 @@ import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ColumnResolver {
 
     public ColumnResolver(RepoMetaRegistry repoMetaRegistry) {
@@ -57,6 +60,8 @@ public class ColumnResolver {
             }
         }
 
+
+
         return colStr;
     }
 
@@ -79,6 +84,28 @@ public class ColumnResolver {
         return new String[]{className, filedName};
 
     }
+
+
+    //as 없이 o.id 와 같은 select 컬럼 값이 있으면 AS를 자동으로 붙여줌
+    public List<String> normalizeColumnName(List<String> columns) {
+        return
+                columns.stream()
+                        .map(col -> {
+                            // 이미 AS가 붙어있으면 그대로 반환
+                            if (col.toLowerCase().contains(" as ")) {
+                                return col;
+                            }
+                            // o.id -> o_id
+                            if (col.contains(".")) {
+                                String alias = col.replace(".", "_");
+                                return col + " AS " + alias;  // AS alias 추가
+                            }
+                            // 루트 컬럼은 그대로
+                            return col;
+                        })
+                        .collect(Collectors.toList());
+    }
+
 
 
     private String convertGetterToField(String methodName) {

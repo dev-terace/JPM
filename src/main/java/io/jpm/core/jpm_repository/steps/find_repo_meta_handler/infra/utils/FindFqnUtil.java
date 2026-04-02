@@ -13,10 +13,12 @@ import java.util.List;
 public class FindFqnUtil {
 
 
+
+
     public static String findClassNameFqnOrInterface(TypeElement repoElement, List<String> passedArgs, AstContext astContext)
     {
         String arg = passedArgs.get(0);
-
+        LogPrinter.info("findFqnOrInterface: arg="+arg);
         // 클래스 리터럴인 경우
         if (arg.contains(".class")) {
             String simpleName = arg.replace(".class", "");
@@ -49,6 +51,9 @@ public class FindFqnUtil {
             if (!(node instanceof VariableTree)) continue;
             VariableTree varTree = (VariableTree) node;
 
+
+
+
             ExpressionTree initializer = varTree.getInitializer();
             if (initializer == null) continue;
 
@@ -63,6 +68,7 @@ public class FindFqnUtil {
                     .getPackageOf(repoElement)
                     .getQualifiedName()
                     .toString();
+
             return pkg + "." + simpleName;
         }
 
@@ -80,4 +86,5 @@ public class FindFqnUtil {
         }
         return "";
     }
+
 }

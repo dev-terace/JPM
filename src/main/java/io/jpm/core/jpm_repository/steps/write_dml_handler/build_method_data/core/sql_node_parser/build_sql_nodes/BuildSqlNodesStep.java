@@ -42,6 +42,7 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
         BuildContext       buildCtx   = ctx.getBuildContext();
         EntityMeta         entityMeta = ctx.getEntityMeta();
         WhereClauseNode    where      = new WhereClauseNode();
+        HavingClauseNode having = new HavingClauseNode();
 
         for (int i = 0; i < statements.size(); i++) {
             DslStatement stmt = statements.get(i);
@@ -60,6 +61,9 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
                     break;
                 case "selectRaw":
                     ctx.addNode(new SelectRawNode(stmt.getArgs(), columnResolver));
+                    break;
+                case "selectRawResult":
+                    ctx.addNode(new SelectRawResultNode(stmt.getArgs(), columnResolver));
                     break;
 
                 case "from":
@@ -134,10 +138,30 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
                 case "orderBy": ctx.addNode(new OrderByNode(stmt.getArgs(), columnResolver));                   break;
                 case "limit":   ctx.addNode(new LimitOffsetNode("LIMIT",  args.get(0)));                       break;
                 case "offset":  ctx.addNode(new LimitOffsetNode("OFFSET", args.get(0)));                       break;
+
+                case "having":
+                case "havingAnd":
+                    having.addCondition(buildCondition(" AND ", stmt, args, buildCtx));
+                    break;
+
+                case "havingOr":
+                    having.addCondition(buildCondition(" OR ", stmt, args, buildCtx));
+                    break;
+
+                case "havingGroup":
+                case "havingOrGroup": {
+                    List<DslStatement> sub = GroupExtractorUtil.extract(statements, i);
+                    i += sub.size() + 1;
+                    GroupType type = cmd.startsWith("havingOr") ? GroupType.OR : GroupType.AND;
+                    having.addGroup(parseGroup(sub, type, buildCtx, entityMeta));
+                    break;
+                }
+
             }
         }
 
         if (!where.isEmpty()) ctx.addNode(where);
+        if (!having.isEmpty()) ctx.addNode(having);
     }
 
     // -------------------------------------------------------------------------

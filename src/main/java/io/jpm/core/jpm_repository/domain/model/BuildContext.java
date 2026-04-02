@@ -17,6 +17,7 @@ public class BuildContext {
     private final Set<String>  tables     = new LinkedHashSet<>();
     private final List<String> joins      = new ArrayList<>();
     private final List<String> wheres     = new ArrayList<>();
+    private final List<String> havingAll = new ArrayList<>();
     private final List<String> sets       = new ArrayList<>();
     private final List<String> insertCols = new ArrayList<>();
     private final List<String> insertVals = new ArrayList<>();
@@ -88,6 +89,7 @@ public class BuildContext {
     public Set<String>  getTables()     { return tables; }
     public List<String> getJoins()      { return joins; }
     public List<String> getWheres()     { return wheres; }
+    public List<String> getHavingAll()    { return havingAll; }
     public List<String> getSets()       { return sets; }
     public List<String> getInsertCols() { return insertCols; }
     public List<String> getInsertVals() { return insertVals; }
