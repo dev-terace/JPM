@@ -22,7 +22,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     private final Map<String, String> entityAliasMap = new HashMap<>();
 
 
-    private final Map<String, Class<?>> classMap = new HashMap<>();
+    private final Map<String, String> classPathMap = new HashMap<>();
     // 클래스명 -> 테이블명 매핑 (선택 사항, 필요시 사용)
     private final Map<String, String> tableRegistry = new HashMap<>();
 
@@ -109,7 +109,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
                 entityMeta.addMapping(fieldName, columnName);
                 if (typeName != null) entityMeta.addTypeMapping(fieldName, typeName);
 
-                System.out.println("[register] tableName=" + tableName + ", columnName=" + columnName + ", typeName=" + typeName);
+                System.out.println("[register] field=" + fieldName + ", columnName=" + columnName + ", typeName=" + typeName);
 
 
             }
@@ -143,17 +143,21 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     }
 
 
-    public void registerEntity(Class<?> entityClass) {
+    public void registerEntity(String simpleName, String qualifiedName) {
         // entityClass.getSimpleName() 은 "UserEntity" 와 같은 짧은 이름을 반환합니다.
-        classMap.put(entityClass.getSimpleName(), entityClass);
 
-       /* LogPrinter.info("[RepoMetaRegistry] entityClassName=" + entityClass + " entityClass=" + entityClass);*/
+
+        classPathMap.put(simpleName, qualifiedName);
+
+        LogPrinter.info("[RepoMetaRegistry] entityClassName=" + simpleName + " entityClass=" + qualifiedName);
 
         // EntityMeta 객체 생성 및 저장 로직도 여기에 함께 구현...
     }
 
-    public Class<?> getEntityClass(String entityName) {
-        return classMap.get(entityName);
+    public String getEntityPath(String entityName) {
+
+
+        return classPathMap.get(entityName);
     }
 
 

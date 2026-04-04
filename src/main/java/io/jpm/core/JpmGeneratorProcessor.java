@@ -150,7 +150,7 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
             ErrorTracker errorTracker = new ErrorTrackerImpl(cache.getSourceLocationCache());
             ArgumentTokenExtractor argumentTokenExtractor = new ArgumentTokenExtractor(new ArgumentTokenExtractorValueResolver(repoMetaRegistry), cache, errorTracker);
-            DslCommandProcStep commandProcV2 = new DslCommandProcStep(cache, errorTracker, argumentTokenExtractor);
+            DslCommandProcStep commandProcV2 = new DslCommandProcStep(cache, errorTracker, new AstContext(processingEnv));
 
 
             Map<String, String> safeOptions = processingEnv.getOptions().entrySet().stream()

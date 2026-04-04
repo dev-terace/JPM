@@ -1,11 +1,11 @@
 package io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core;
 
-import io.jpm.api.MqAssociation;
-import io.jpm.api.MqCollection;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.utils.LogPrinter;
+import io.jpm.config.ast.AstContext;
 import io.jpm.config.ast.BuildTimeMetadataCache;
 import io.jpm.config.ast.Step;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DslStatement;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
@@ -13,12 +13,11 @@ import io.jpm.core.jpm_repository.domain.model.MapJoinMeta;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.DslCommandProcContext;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.context.DslCommandProcValidContext;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.support.ArgumentTokenExtractor;
-import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.MethodRefUtil;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
+import io.jpm.core.m_entity.utils.GeneratedPathResolver;
 
 
-import java.lang.reflect.Field;
+import javax.annotation.processing.Filer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,17 +35,24 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
             "from", "insertInto", "update", "deleteFrom"
     );
 
+    private static final List<String> JOIN_MAP_COMMANDS = Arrays.asList(
+            "collectionJoin", "associationJoin"
+    );
+
     private final RepoMetaRegistry          repoMetaRegistry;
     private final DslCommandProcessorValidStep dslCommandProcessorValidStep;
 
 
+    private final EntityRelationRegistry entityRelationRegistry;
+
 
     public DslCommandProcStep(BuildTimeMetadataCache cache,
                               ErrorTracker errorTracker,
-                              ArgumentTokenExtractor tokenExtractor) {
+                              AstContext astContext) {
         this.repoMetaRegistry  = cache.getRepoMetaRegistry();
-        this.dslCommandProcessorValidStep = new DslCommandProcessorValidStep(cache, errorTracker, new ColumnResolver(repoMetaRegistry));
 
+        this.dslCommandProcessorValidStep = new DslCommandProcessorValidStep(cache, errorTracker, new ColumnResolver(repoMetaRegistry));
+        this.entityRelationRegistry = cache.getEntityRelationRegistry();
     }
 
     /** ParseMethodBodyStep 에서 호출 - 토큰 추출부터 처리까지 일괄 수행 */
@@ -61,8 +67,8 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
 
 
 
-        if ("mapJoin".equals(command)) {
-            processMapJoin(context);
+        if (JOIN_MAP_COMMANDS.contains(command)) {
+            processMapJoin(context, command);
         } else if (JOIN_COMMANDS.contains(command)) {
             LogPrinter.info("[join] command=" + command);
             processJoin(context);
@@ -76,17 +82,62 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
     // Private handlers
     // -------------------------------------------------------------------------
 
-    private void processMapJoin(DslCommandProcContext context) {
+    private void processMapJoin(DslCommandProcContext context, String command) {
         List<String> rawArgs = context.getRawArgs();
         MethodMeta methodMeta = context.getMethodMeta();
 
         if (rawArgs.isEmpty()) return;
-        String raw       = rawArgs.get(0);
-        String fieldName = MethodRefUtil.extractFieldName(raw);
-        String alias     = rawArgs.size() > 1 ? rawArgs.get(1) : null;
+        String className       = rawArgs.get(0);
+        String fieldName = rawArgs.get(1);
+        String alias     = rawArgs.get(2);
 
-        methodMeta.addMapJoin(new MapJoinMeta(fieldName, alias, resolveMappingType(raw, fieldName)));
-        methodMeta.addStatement(new DslStatement("mapJoin", rawArgs));
+
+        MapJoinMeta.MappingType mappingType;
+
+        if(command.equals("collectionJoin"))
+        {
+            mappingType = MapJoinMeta.MappingType.COLLECTION;
+        }else{
+            mappingType = MapJoinMeta.MappingType.ASSOCIATION;
+        }
+
+
+
+        String entityName =  className.replace(".class", "");
+        String classPath = repoMetaRegistry.getEntityPath(entityName);
+
+
+
+        LogPrinter.info("[processMapJoin] classPath=" + classPath);
+
+        String javaType = GeneratedPathResolver.resolveResult(classPath);
+
+        LogPrinter.info("[processMapJoin] javaType= " + javaType);
+
+
+
+
+        String pkFieldName = entityRelationRegistry.getPkFieldName(entityName);
+
+        EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(entityName);
+        String pkColName = entityMeta.getColumn(pkFieldName);
+
+
+
+
+
+
+        methodMeta.addMapJoin(new MapJoinMeta(javaType, fieldName, alias, mappingType, pkFieldName, pkColName));
+
+
+
+
+
+
+
+       /* methodMeta.addStatement(new DslStatement("mapJoin", rawArgs));*/
+
+
     }
 
     private void processJoin(DslCommandProcContext ctx) {
@@ -133,7 +184,7 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
 
 
 
-    private MapJoinMeta.MappingType resolveMappingType(String raw, String fieldName) {
+/*    private MapJoinMeta.MappingType resolveMappingType(String raw, String fieldName) {
         String classNamePart = raw.contains("|")
                 ? raw.split("\\|")[1].split("::")[0].trim()
                 : raw.contains("::") ? raw.split("::")[0].trim() : null;
@@ -144,9 +195,15 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
             EntityMeta meta = repoMetaRegistry.getEntityMeta(classNamePart);
             if (meta == null) return MapJoinMeta.MappingType.AUTO;
 
+
+            LogPrinter.info("[resolveMappingType] entityClass= " + classNamePart);
+
+
             Class<?> entityClass = repoMetaRegistry.getEntityClass(classNamePart);
             Field field = entityClass.getDeclaredField(fieldName);
 
+
+            LogPrinter.info("[resolveMappingType] entityClass=" + entityClass + " fieldName=" + fieldName);
             if (field.isAnnotationPresent(MqCollection.class))  return MapJoinMeta.MappingType.COLLECTION;
             if (field.isAnnotationPresent(MqAssociation.class)) return MapJoinMeta.MappingType.ASSOCIATION;
 
@@ -158,5 +215,5 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
             LogPrinter.exceptionInfo(e);
             return MapJoinMeta.MappingType.AUTO;
         }
-    }
+    }*/
 }

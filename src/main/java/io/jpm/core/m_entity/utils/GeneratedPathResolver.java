@@ -1,10 +1,8 @@
 package io.jpm.core.m_entity.utils;
 
 import io.jpm.common.utils.LogPrinter;
-import io.jpm.config.ast.AstContext;
 
 import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
@@ -14,7 +12,20 @@ import java.nio.file.Paths;
 // ── GeneratedPathResolver 수정 ───────────────────────────────
 public class GeneratedPathResolver {
 
-    public static Path resolve(String fqcn, Filer filer)  {
+
+    private static final String DEFAULT_RESULT_PATH = "terrace.result";
+
+    public static String resolveResult(String fqcn)
+    {
+        int lastDot = fqcn.lastIndexOf('.');
+        String packageName        = fqcn.substring(0, lastDot);
+        String className          = fqcn.substring(lastDot + 1);
+        String generatedClassName = "R" + className;
+        String packagePath        = packageName.replace('.', '/');
+
+        return DEFAULT_RESULT_PATH + "." + packagePath + "." + generatedClassName;
+    }
+    public static Path resolveResult(String fqcn, Filer filer)  {
 
         int lastDot = fqcn.lastIndexOf('.');
         String packageName        = fqcn.substring(0, lastDot);
@@ -31,6 +42,7 @@ public class GeneratedPathResolver {
                 .resolve("annotationProcessor")
                 .resolve("java")
                 .resolve("main")
+                .resolve(DEFAULT_RESULT_PATH)
                 .resolve(packagePath)
                 .resolve(generatedClassName + ".java");
     }

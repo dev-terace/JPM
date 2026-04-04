@@ -241,8 +241,9 @@ public abstract class JpmAbstractQuerySegment {
     public <E, R> void mapResult(MFieldRef<E, R> fieldRef, String dbColumn) {}
 
 
-    public <E, R> void mapJoin(MFieldRef<E, R> parentField, String alias) {}
 
+    public void collectionJoin(Class<?> clazz, String property, String alias) {}
+    public void associationJoin(Class<?> clazz, String property, String alias) {}
 
 
 

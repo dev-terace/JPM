@@ -16,6 +16,7 @@ import io.jpm.core.jpm_repository.utils.ColumnResolver;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class BuildMethodDataMainStep implements Step<BuildMethodDataContext> {
 
     private List<MybatisXmlGenerator.MethodData> result = new ArrayList<>();
@@ -38,7 +39,8 @@ public class BuildMethodDataMainStep implements Step<BuildMethodDataContext> {
 
             String finalSql = sqlMapBinderContext.getFinalSql();
 
-            result.add(new MybatisXmlGenerator.MethodData(method, ResultMapMeta.from(method), finalSql));
+
+            result.add(new MybatisXmlGenerator.MethodData(method, ResultMapMeta.from(method, repoMetaRegistry), finalSql));
         }
     }
 

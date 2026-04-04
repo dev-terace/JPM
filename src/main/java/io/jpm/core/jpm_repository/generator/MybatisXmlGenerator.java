@@ -16,6 +16,7 @@ public class MybatisXmlGenerator {
      * 하나의 메서드를 생성하는 데 필요한 데이터 묶음
      */
 
+
     private final RepoMetaRegistry repoMetaRegistry;
 
     public MybatisXmlGenerator(RepoMetaRegistry repoMetaRegistry) {
@@ -147,7 +148,6 @@ public class MybatisXmlGenerator {
 
 
 
-
             ResultMapMeta meta = method.getMeta();
             String sql = method.getSql() != null ? method.getSql() : "";
 
@@ -195,51 +195,43 @@ public class MybatisXmlGenerator {
                     xml.append("        <result property=\"").append(prop).append("\" column=\"").append(col).append("\"/>\n");
                 }
 
-                // 1-3. <association> 매핑 (1:1)
-                for (ResultMapMeta.RelationMapping assoc : meta.getAssociationMappings()) {
-                    // 🚀 [적용] 부모 프로퍼티 정제
-                    String assocProp = toPropertyName(assoc.getFieldName());
-                    xml.append("        <association property=\"").append(assocProp)
-                            .append("\" javaType=\"").append(assoc.getTargetClass()).append("\">\n");
-
-                    // 🚀 [적용] 자식 프로퍼티/컬럼 정제
-                    String childProp = toPropertyName(assoc.getChildIdProperty());
-                    String childCol = toColumnName(assoc.getChildIdColumn());
-                    xml.append("            <id property=\"").append(childProp).append("\" column=\"").append(childCol).append("\"/>\n");
-
-                    xml.append("        </association>\n");
-                }
-
-                // 1-4. <collection> 매핑 (1:N)
-                for (ResultMapMeta.RelationMapping coll : meta.getCollectionMappings()) {
-                    // 🚀 [적용] 부모 프로퍼티 정제
-                    String collProp = toPropertyName(coll.getFieldName());
-                    xml.append("        <collection property=\"").append(collProp)
-                            .append("\" ofType=\"").append(coll.getTargetClass()).append("\">\n");
-
-                    // 🚀 [적용] 자식 프로퍼티/컬럼 정제
-                    String childProp = toPropertyName(coll.getChildIdProperty());
-                    String childCol = toColumnName(coll.getChildIdColumn());
-                    xml.append("            <id property=\"").append(childProp).append("\" column=\"").append(childCol).append("\"/>\n");
-
-                    xml.append("        </collection>\n");
-                }
 
 
                 List<MapJoinMeta> mapJoins = methodMeta.getMapJoins();
+
+
+
+
+
+
+
+
+
+
+
                 for (MapJoinMeta mj : mapJoins) {
                     String propName = toPropertyName(mj.getParentField());
                     String alias = mj.getAlias();
-                    String targetJavaType = resolveTargetJavaType(mj.getParentField());
+                    String targetJavaType = mj.getJavaType();
+                    String pkFieldName = mj.getPkFieldName();
+                    String pkColName = mj.getPkColName();
 
                     if (mj.isList()) {
                         xml.append("        <collection property=\"").append(propName)
                                 .append("\" ofType=\"").append(targetJavaType)
-                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append("_\"/>\n");
+                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append("_\">\n")
+                                .append("            <id property=\"").append(pkFieldName)
+                                .append("\" column=\"").append(pkColName).append("\"/>\n")
+                                .append("        </collection>\n");
+
+
                     } else {
                         xml.append("        <association property=\"").append(propName)
                                 .append("\" javaType=\"").append(targetJavaType)
-                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append("_\"/>\n");
+                                .append("\" autoMapping=\"true\" columnPrefix=\"").append(alias).append("_\">\n")
+                                .append("            <id property=\"").append(pkFieldName)
+                                .append("\" column=\"").append(pkColName).append("\"/>\n")
+                                .append("        </association>\n");
                     }
                 }
 

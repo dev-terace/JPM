@@ -64,7 +64,13 @@ public class MetadataCacheV3 {
         parsedVariablesCache.put(className, result.getVariables());
         repoMetaRegistry.registerTable(className, tableName);
         assert entityAnn != null;
-        repoMetaRegistry.registerEntity(element.getClass());
+
+
+
+        String simpleName = element.getSimpleName().toString();
+        String qualifiedName = element.getQualifiedName().toString();
+
+        repoMetaRegistry.registerEntity(simpleName, qualifiedName);
 
 
 

@@ -12,7 +12,7 @@ public class DSLKeywords {
             "insertInto", "update", "deleteFrom", "value", "set", "setRaw",
             "orderBy", "groupBy", "limit", "offset", "sql", "selectRaw", "orderByRaw", "groupByRaw",
             "whereInGroup", "group", "fromGroup", "selectCase",
-            "mapTarget", "mapId", "mapResult", "mapJoin", "innerJoinGroup", "leftJoinGroup",
+            "mapTarget", "mapId", "mapResult", "associationJoin", "collectionJoin", "innerJoinGroup", "leftJoinGroup",
             "whereExistsGroup", "whereNotExistsGroup",
             "having", "havingAnd", "havingOr", "havingGroup", "havingOrGroup", "selectRawResult"
     )));

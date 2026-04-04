@@ -1,5 +1,6 @@
 package io.jpm.core.jpm_repository.domain.model;
 
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 
 import java.util.Collection;
@@ -45,6 +46,8 @@ public class EntityMeta {
     public String getTableName() { return tableName; }
 
     public String getColumn(String fieldName) {
+
+        LogPrinter.info("fieldToColumn: " + fieldToColumn.toString());
         return fieldToColumn.get(fieldName);
     }
 

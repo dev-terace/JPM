@@ -1,6 +1,7 @@
 package io.jpm.core.jpm_repository.domain.model;
 
 import io.jpm.common.utils.LogPrinter;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ public class ResultMapMeta {
     // ==============================================================
     // ★ [핵심] MethodMeta를 통째로 받아서 매핑 정보만 쏙쏙 뽑아내는 팩토리 메서드
     // ==============================================================
-    public static ResultMapMeta from(MethodMeta methodMeta) {
+    public static ResultMapMeta from(MethodMeta methodMeta, RepoMetaRegistry repoMetaRegistry) {
         ResultMapMeta meta = new ResultMapMeta();
 
         for (DslStatement stmt : methodMeta.getStatements()) {
@@ -52,12 +53,18 @@ public class ResultMapMeta {
 
             }
 
-            else if ("mapAssociation".equals(command) || "mapCollection".equals(command)) {
+   /*         else if ("collectionJoin".equals(command) || "associationJoin".equals(command)) {
 
-                String fieldName = args.get(0);
-                String targetClass = args.get(1);
+
+                LogPrinter.info("Association Join : " + args.toString());
+                String targetClass = args.get(0);
+                String fieldName = args.get(1);
 
                 // 3번째 인자(자식 ID 프로퍼티), 없으면 "id"
+
+                Class<?> targetClazz =  repoMetaRegistry.getEntityPath(targetClass);
+                targetClass = targetClazz.getPackage().getName();
+
                 String childIdProp = args.size() > 2 ? args.get(2) : "id";
 
                 // 4번째 인자(DB 컬럼명), 없으면 카멜->스네이크 자동 변환("order_id")
@@ -67,12 +74,12 @@ public class ResultMapMeta {
                 RelationMapping relation = new RelationMapping(fieldName, targetClass, childIdProp, childIdCol);
 
                 // 리스트에 추가
-                if ("mapAssociation".equals(command)) {
+                if ("associationJoin".equals(command)) {
                     meta.associationMappings.add(relation);
                 } else {
                     meta.collectionMappings.add(relation);
                 }
-            }
+            }*/
         }
         return meta;
     }

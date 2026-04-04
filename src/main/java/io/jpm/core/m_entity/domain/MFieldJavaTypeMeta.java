@@ -42,7 +42,7 @@ public class MFieldJavaTypeMeta {
 
     public void setGeneratePath(String fqcn)
     {
-        generatePath = GeneratedPathResolver.resolve(fqcn, filer);
+        generatePath = GeneratedPathResolver.resolveResult(fqcn, filer);
     }
 
     public String getJavaTypeSimpleName() {

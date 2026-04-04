@@ -17,13 +17,13 @@ public interface RepoMetaRegistry {
     String getSegmentPath(String repoName, String fieldVarName);
 
 
-    void registerEntity(Class<?> entityClass);
+    void registerEntity(String simpleName, String qualifiedName);
     // 조회 메서드
     EntityMeta getEntityMeta(String entityName);
     String getTable(String entityName);
 
 
-    Class<?> getEntityClass(String entityName);
+    String getEntityPath(String entityName);
     List<String> getSegmentVarNames(String entityName);
 
 

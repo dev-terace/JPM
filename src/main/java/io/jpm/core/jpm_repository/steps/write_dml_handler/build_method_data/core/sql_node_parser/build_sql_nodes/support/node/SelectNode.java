@@ -36,13 +36,10 @@ public class SelectNode implements SqlNode {
 
 
 
-        boolean isContainAlias = columns.stream().anyMatch(col -> col.contains("."));
 
-        if(isContainAlias)
-        {
-            resolved = columnResolver.normalizeColumnName(resolved);
-            LogPrinter.info("[SelectNode] resolved: " + resolved);
-        }
+
+        resolved = columnResolver.normalizeColumnName(resolved);
+        LogPrinter.info("[SelectNode] resolved: " + resolved);
 
 
 
