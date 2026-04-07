@@ -1,10 +1,14 @@
 package io.jpm.core.jpm_repository.domain.model;
 
 import io.jpm.common.utils.LogPrinter;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 쿼리 결과를 Java 객체로 변환하기 위한 매핑 메타데이터
@@ -23,65 +27,147 @@ public class ResultMapMeta {
     // ==============================================================
     // ★ [핵심] MethodMeta를 통째로 받아서 매핑 정보만 쏙쏙 뽑아내는 팩토리 메서드
     // ==============================================================
-    public static ResultMapMeta from(MethodMeta methodMeta, RepoMetaRegistry repoMetaRegistry) {
+
+
+    public static ResultMapMeta from(MethodMeta methodMeta, RepoMetaRegistry repoMetaRegistry, EntityRelationRegistry entityRelationRegistry) {
         ResultMapMeta meta = new ResultMapMeta();
 
+
+
+
+        List<DslStatement> selectStmts = new ArrayList<>();
+
+        DslStatement fromStmt = null;
+
         for (DslStatement stmt : methodMeta.getStatements()) {
+
+
             String command = stmt.getCommand();
+
             List<String> args = stmt.getArgs();
 
+            LogPrinter.info("ResultMapMeta Args : "  + args.toString());
+
             // 기존 mapId, mapResult 처리 로직 (필요시 활성화)
+
+            if(fromStmt == null && command.contains("select"))
+            {
+               selectStmts.add(stmt);
+
+            }
+
+            if(fromStmt == null && command.contains("from"))
+            {
+                fromStmt = stmt;
+                LogPrinter.info("ResultMapMeta fromStmts : "  + stmt);
+            }
+
+
+
             if ("mapId".equals(command) && args.size() >= 2) {
                 meta.idMappings.add(new FieldMapping(args.get(0), args.get(1)));
             } else if ("mapResult".equals(command) && args.size() >= 2) {
                 meta.resultMappings.add(new FieldMapping(args.get(0), args.get(1)));
             }
             else if("selectRawResult".equals(command)) {
-                LogPrinter.info("Select Raw Result : " + args.toString());
-               /* meta.resultMappings.add(new FieldMapping(snakeToCamel(args.get(1)), args.get(1)));*/
+                LogPrinter.info("Select Raw Result : " + args);
 
-                int partIdx = 1;
                 for (String part : splitSelectRawSql(args.get(0))) {
                     if (part.toUpperCase().contains(" AS ")) {
                         // 특정 프로세스
 
-                        String AsName = part.split(" AS ")[1];
-                        meta.resultMappings.add(new FieldMapping(snakeToCamel(AsName), AsName));
+                        String asName = part.split(" AS ")[1];
+                        meta.resultMappings.add(new FieldMapping(snakeToCamel(asName), asName));
                     }
                 }
 
 
             }
 
-   /*         else if ("collectionJoin".equals(command) || "associationJoin".equals(command)) {
 
-
-                LogPrinter.info("Association Join : " + args.toString());
-                String targetClass = args.get(0);
-                String fieldName = args.get(1);
-
-                // 3번째 인자(자식 ID 프로퍼티), 없으면 "id"
-
-                Class<?> targetClazz =  repoMetaRegistry.getEntityPath(targetClass);
-                targetClass = targetClazz.getPackage().getName();
-
-                String childIdProp = args.size() > 2 ? args.get(2) : "id";
-
-                // 4번째 인자(DB 컬럼명), 없으면 카멜->스네이크 자동 변환("order_id")
-                String childIdCol = args.size() > 3 ? args.get(3) : camelToSnake(childIdProp);
-
-                // VO 객체 생성 및 세팅 (생성자 활용)
-                RelationMapping relation = new RelationMapping(fieldName, targetClass, childIdProp, childIdCol);
-
-                // 리스트에 추가
-                if ("associationJoin".equals(command)) {
-                    meta.associationMappings.add(relation);
-                } else {
-                    meta.collectionMappings.add(relation);
-                }
-            }*/
         }
+
+
+
+
+
+        resolveIdMappings(fromStmt, selectStmts, repoMetaRegistry, entityRelationRegistry, meta);
+
+
         return meta;
+    }
+
+
+
+    private static void resolveIdMappings(DslStatement fromStmt, List<DslStatement> selectStmts,
+                                   RepoMetaRegistry repoMetaRegistry, EntityRelationRegistry entityRelationRegistry,  ResultMapMeta meta) {
+        if (fromStmt == null) return;
+
+        String fromTargetEntity = fromStmt.getArgs().get(0).replace(".class", "");
+        String fromTargetPkFieldName = entityRelationRegistry.getPkFieldName(fromTargetEntity);
+        EntityMeta selectMeta = repoMetaRegistry.getEntityMeta(fromTargetEntity);
+
+
+        String tableAlias;
+        if(fromStmt.getArgs().size() >= 2) {
+            tableAlias = fromStmt.getArgs().get(1);
+        } else {
+            tableAlias = null;
+        }
+
+
+        if(tableAlias == null) { //alias 없는 형태
+            selectStmts.stream()
+                    .flatMap(s -> s.getArgs().stream())
+
+                    .filter(arg -> arg.split("::")[0].equals(fromTargetEntity))
+                    .map(arg -> arg.split("::")[1])
+                    .map(arg -> ColumnResolver.extractColumn(ColumnResolver.convertGetterToField(arg)))
+                    .filter(fromTargetPkFieldName::equals)
+                    .forEach(fieldName -> {
+                        String columnName = selectMeta.getColumn(fieldName);
+                        String aliasName = selectMeta.getTableName() + "_" + columnName;
+                        LogPrinter.info("[ResultMapMeta] aliasName : " + aliasName);
+                        meta.idMappings.add(new FieldMapping(fieldName, aliasName));
+                    });
+        }else{
+            String rootPkFiledName = tableAlias + "." + selectMeta.getColumn(fromTargetPkFieldName);
+            LogPrinter.info("[ResultMapMeta] tableAlias : " + rootPkFiledName);
+
+
+
+            selectStmts.stream()
+                    .flatMap(s -> s.getArgs().stream())
+                    .map(arg -> {
+                        String[] asParts = arg.split(" AS ");
+                        String cleaned = asParts[0].trim();
+                        String alias = asParts.length > 1 ? asParts[1].trim() : null;
+
+                        int dotIdx = cleaned.lastIndexOf(".");
+                        String key = dotIdx >= 0 ? cleaned.substring(dotIdx + 1) : cleaned;
+
+                        return new AbstractMap.SimpleEntry<>(key, alias);  // ("OrderEntity::getTotalPrice", "good2")
+                    })
+                    .filter(entry -> entry.getKey().split("::")[0].equals(fromTargetEntity))
+                    .map(entry -> new AbstractMap.SimpleEntry<>(
+                            ColumnResolver.extractColumn(ColumnResolver.convertGetterToField(entry.getKey().split("::")[1])),
+                            entry.getValue()  // alias 유지
+                    ))
+                    .peek(entry -> LogPrinter.info("[ResultMapMeta] fieldName : " + entry.getKey() + ", alias : " + entry.getValue()))
+                    .filter(entry -> fromTargetPkFieldName.equals(entry.getKey()))
+                    .forEach(entry -> {
+                        String fieldName = entry.getKey();
+                        String alias = entry.getValue();
+                        String columnName = selectMeta.getColumn(fieldName);
+                        String aliasName = selectMeta.getTableName() + "_" + columnName;
+                        LogPrinter.info("[ResultMapMeta] alias : " + alias);
+
+                        if(alias == null) {
+                            alias = rootPkFiledName.replace(".", "_");
+                        }
+                        meta.idMappings.add(new FieldMapping(fieldName, alias));
+                    });
+        }
     }
 
 

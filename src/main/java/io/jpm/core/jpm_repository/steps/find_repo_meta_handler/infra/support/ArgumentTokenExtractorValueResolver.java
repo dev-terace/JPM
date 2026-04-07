@@ -103,8 +103,8 @@ public class ArgumentTokenExtractorValueResolver {
                     if (args.size() < 2) return "";
                     String alias = resolve(args.get(0), mapParamRegistryImpl, false, true);
                     String field = resolve(args.get(1), mapParamRegistryImpl, false, resolveToColumn);
-                    LogPrinter.info("[joinNode] alias=" + alias + " field=" + field);
-                    return alias + "." + field;
+                    LogPrinter.info("[col] alias=" + alias + " field=" + args.get(1));
+                    return alias + "." + args.get(1);
                 }
 
                 default:

@@ -3,6 +3,7 @@ package io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.mai
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.CompositeStep;
 import io.jpm.config.ast.Step;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
@@ -24,11 +25,16 @@ public class BuildMethodDataMainStep implements Step<BuildMethodDataContext> {
     @Override
     public void execute(BuildMethodDataContext ctx) throws Exception {
         RepoMetaRegistry repoMetaRegistry = ctx.getJpmRepoContext().getCache().getRepoMetaRegistry();
+        EntityRelationRegistry entityRelationRegistry = ctx.getJpmRepoContext().getCache().getEntityRelationRegistry();
         CompositeStep<SqlMapBinderContext> binder           = new CompositeSqlMapperBinderStep(
                 repoMetaRegistry, new ColumnResolver(repoMetaRegistry)
         );
 
+
+
         result = new ArrayList<>();
+
+
         for (MethodMeta method : ctx.getRepoMeta().getMethods()) {
             LogPrinter.info("[BuildMethodDataMainStep] MethodName=" + method.getMethodName());
 
@@ -40,9 +46,16 @@ public class BuildMethodDataMainStep implements Step<BuildMethodDataContext> {
             String finalSql = sqlMapBinderContext.getFinalSql();
 
 
-            result.add(new MybatisXmlGenerator.MethodData(method, ResultMapMeta.from(method, repoMetaRegistry), finalSql));
+            ResultMapMeta resultMapMeta = ResultMapMeta.from(method, repoMetaRegistry, entityRelationRegistry);
+
+            result.add(new MybatisXmlGenerator.MethodData(method, resultMapMeta, finalSql));
+
+
+
+
         }
     }
+
 
     public List<MybatisXmlGenerator.MethodData> getResult() {
         return result;

@@ -265,27 +265,8 @@ public abstract class JpmAbstractQuerySegment {
 
 
 
-/*
-
-    @FunctionalInterface
-    public interface segmentAction<E> {
-        // 모든 메서드 참조를 수용할 수 있는 느슨한 시그니처
-        void apply(E segment, Object... args);
-    }
-*/
 
 
-
-
-
-    // segment는 단순하게
-/*    public <E extends JpmAbstractQuerySegment> void segment(
-            Class<E> type,
-            Consumer<E> consumer  // java.util.function.Consumer 사용
-    ) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        E instance = type.getDeclaredConstructor().newInstance();
-        consumer.accept(instance);
-    }*/
 
 
     public <E> void segment(

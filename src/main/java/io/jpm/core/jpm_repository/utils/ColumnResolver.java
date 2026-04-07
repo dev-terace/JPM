@@ -2,7 +2,7 @@ package io.jpm.core.jpm_repository.utils;
 
 
 
-import io.jpm.common.utils.LogPrinter;
+
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
@@ -108,7 +108,7 @@ public class ColumnResolver {
 
 
 
-    private String convertGetterToField(String methodName) {
+    public static String convertGetterToField(String methodName) {
 
         if (methodName.startsWith("get") && methodName.length() > 3) {
             return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
@@ -120,34 +120,23 @@ public class ColumnResolver {
     }
 
 
-/*    private String convertGetterToField(String className, String methodName, boolean isPrefix) {
+    public static String extractColumn(String arg) {
+        // 1. AS 제거
+        String expr = arg.split("(?i)\\s+AS\\s+")[0].trim();
 
-
-        LogPrinter.info("[convertGetterToField] : className: "+ className + " methodName: " + methodName + " isPrefix  : " + isPrefix);
-        String fieldName;
-        if (methodName.startsWith("get") && methodName.length() > 3) {
-            fieldName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-        } else if (methodName.startsWith("is") && methodName.length() > 2) {
-            fieldName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
-        } else {
-            throw new RuntimeException("[convertGetterToField] 알 수 없는 메서드명: " + methodName);
+        // 2. 함수 제거 (예: MAX(...))
+        if (expr.contains("(")) {
+            expr = expr.replaceAll(".*\\((.*)\\)", "$1");
         }
 
+        // 3. alias 제거 (o1.order_id → order_id)
+        if (expr.contains(".")) {
+            expr = expr.substring(expr.lastIndexOf('.') + 1);
+        }
 
-        LogPrinter.info("[convertGetterToField] : fieldName: " + fieldName);
-        EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(className);
-        String tableName = repoMetaRegistry.getTable(entityMeta.getTableName());
-        if (tableName == null) return fieldName;
-
-        String colName = entityMeta.getColumn(fieldName);
-
-        LogPrinter.info("[convertGetterToField] : isPrefix: " + isPrefix);
+        return expr.trim();
+    }
 
 
 
-        LogPrinter.info("[convertGetterToField] : result: " + colName);
-
-        return isPrefix  ? tableName + "." + (colName != null ? colName : fieldName) :
-                                             (colName != null ? colName : fieldName);
-    }*/
 }

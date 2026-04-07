@@ -16,6 +16,7 @@ import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core
 import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.utils.GroupExtractorUtil;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,9 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
         WhereClauseNode    where      = new WhereClauseNode();
         HavingClauseNode having = new HavingClauseNode();
 
+
+
+
         for (int i = 0; i < statements.size(); i++) {
             DslStatement stmt = statements.get(i);
             String       cmd  = stmt.getCommand();
@@ -56,9 +60,13 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
             List<String> args = argResolver.resolveAll(stmt.getArgs(), entityMeta, buildCtx);
 
             switch (cmd) {
+
                 case "select":
                     ctx.addNode(new SelectNode(stmt.getArgs(), columnResolver));
+
+
                     break;
+
                 case "selectRaw":
                     ctx.addNode(new SelectRawNode(stmt.getArgs(), columnResolver));
                     break;
@@ -69,6 +77,7 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
                 case "from":
                     args.set(0, resolveTableName(cleanClassName(args.get(0))));
                     ctx.addNode(new TableNode(args, repoMetaRegistry));
+
                     break;
 
                 case "fromGroup": {
@@ -162,6 +171,8 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
 
         if (!where.isEmpty()) ctx.addNode(where);
         if (!having.isEmpty()) ctx.addNode(having);
+
+
     }
 
     // -------------------------------------------------------------------------

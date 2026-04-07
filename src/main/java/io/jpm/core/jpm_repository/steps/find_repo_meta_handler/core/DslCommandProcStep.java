@@ -60,12 +60,7 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
     /** SegmentInlinerStep 에서 이미 추출된 args 로 직접 호출 */
     public void execute(DslCommandProcContext context) {
 
-
         String command = context.getCommand();
-
-
-
-
 
         if (JOIN_MAP_COMMANDS.contains(command)) {
             processMapJoin(context, command);
@@ -128,6 +123,9 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
 
 
         methodMeta.addMapJoin(new MapJoinMeta(javaType, fieldName, alias, mappingType, pkFieldName, pkColName));
+
+
+
 
 
 
