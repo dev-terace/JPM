@@ -24,7 +24,9 @@ public class ArgResolver {
 
     public List<String> resolveAll(List<String> rawArgs, EntityMeta mainMeta, BuildContext ctx) {
 
-        LogPrinter.info("[ArgResolver] resolveAll rawArgs = "+rawArgs );
+        System.out.println("[ArgResolver] resolveAll rawArgs = "+rawArgs +" mainMeta = "+mainMeta+" ctx = "+ctx);
+
+
         return rawArgs.stream()
                 .map(arg -> arg != null ? resolve(arg, mainMeta, ctx) : "")
                 .collect(Collectors.toList());
@@ -35,7 +37,17 @@ public class ArgResolver {
         try {
             AliasAndArg parsed = splitAsAlias(arg);
             String resolved    = resolveCore(parsed.arg, mainMeta, ctx);
-            return resolved + parsed.asClause;
+
+
+            String as = "";
+            if(parsed.arg.toLowerCase().contains(" as "))
+            {
+                int idx = arg.toLowerCase().indexOf(" as ");
+                as =  " "+arg.substring(idx).trim();
+
+            }
+
+            return resolved + as;
         } catch (Exception e) {
             LogPrinter.exceptionInfo(e);
             throw new RuntimeException(e);
@@ -48,13 +60,16 @@ public class ArgResolver {
 
     private String resolveCore(String arg, EntityMeta mainMeta, BuildContext ctx) {
 
-
         if (arg.contains("::")) {
+
+            System.out.println("[ArgResolver] resolveCore = "+resolveMethodRef(arg, mainMeta, ctx));
             return resolveMethodRef(arg, mainMeta, ctx);
         }
+
         if (arg.contains(".") && !arg.contains("(")) {
             return resolveDotNotation(arg, mainMeta);
         }
+
         return arg;
     }
 
@@ -70,7 +85,7 @@ public class ArgResolver {
 
 
         if (refObj.contains(".")) {
-            LogPrinter.info("[ArgResolver] resolveMethodRef refObj = "+refObj);
+            System.out.println("[ArgResolver] resolveMethodRef refObj = "+refObj);
             String[] refParts     = refObj.split("\\.");
             explicitTableAlias    = refParts[0];
             classNameForMeta      = refParts[1];
@@ -78,14 +93,12 @@ public class ArgResolver {
 
 
 
-        EntityMeta targetMeta = "target".equals(classNameForMeta)
-                ? mainMeta
-                : repoMetaRegistry.getEntityMeta(classNameForMeta);
+        EntityMeta targetMeta = repoMetaRegistry.getEntityMeta(classNameForMeta);
 
 
 
         if (targetMeta != null) {
-            String columnName = targetMeta.getColumn(fieldName);
+            String columnName = targetMeta.getColumn(fieldName.split(" AS ".toLowerCase())[0]);
             String finalCol   = (columnName != null && !columnName.isEmpty())
                     ? columnName
                     : toSnakeCase(fieldName);
@@ -95,7 +108,7 @@ public class ArgResolver {
                     ? explicitTableAlias
                     : ctx.resolveAlias(tableName);
 
-            LogPrinter.info("[ArgResolver] resolveMethodRef alias = "+explicitTableAlias);
+            System.out.println("[ArgResolver] resolveMethodRef alias = "+explicitTableAlias);
 
             // 메인 테이블이고 별칭 접두어 불필요한 경우 컬럼명만 반환
             if (!ctx.isRequiresPrefix()
@@ -105,7 +118,8 @@ public class ArgResolver {
                 return finalCol;
             }
 
-            LogPrinter.info("[resolveMethodRef] : " + alias + "." + finalCol);
+            System.out.println("[resolveMethodRef] : " + alias + "." + finalCol);
+
             return alias + "." + finalCol;
         }
 

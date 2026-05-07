@@ -20,14 +20,8 @@ public class GeneratedJavaTypeMainStep implements Step<GeneratedJavaTypeContext>
     public void execute(GeneratedJavaTypeContext ctx) throws Exception {
         Set<Path> createdDirs = new HashSet<>();
 
-
-
         for (MFieldJavaTypeMeta meta : ctx.getMetas()) {
-
-
-
                 Path filePath = meta.getGeneratePath();
-
                 // 디렉토리 생성 중복 제거
                 Path parentDir = filePath.getParent();
                 if (createdDirs.add(parentDir)) {
@@ -39,10 +33,12 @@ public class GeneratedJavaTypeMainStep implements Step<GeneratedJavaTypeContext>
 
 
                 LogPrinter.info("GeneratedJavaTypeMainStep content: " + content +", filePath : "+filePath);
+
                 Files.write(filePath,
                         content.getBytes(StandardCharsets.UTF_8),
                         StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING);
+                        StandardOpenOption.TRUNCATE_EXISTING
+                );
 
 
         }

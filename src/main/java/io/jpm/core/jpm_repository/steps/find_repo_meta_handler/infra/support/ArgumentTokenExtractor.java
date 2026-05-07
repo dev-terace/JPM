@@ -61,6 +61,7 @@ public class ArgumentTokenExtractor {
         }
     }
 
+
     // lambda 처리 분리
     private List<String> extractFromLambda(LambdaExpressionTree lambda, MapParamRegistryImpl mapParamRegistryImpl) {
         List<String> tokens = new ArrayList<>();

@@ -2,6 +2,7 @@ package io.jpm.core.jpm_repository.domain.model;
 
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import org.gradle.internal.impldep.com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -10,12 +11,15 @@ import java.util.Map;
 public class EntityMeta {
     private final String tableName;
 
+    @JsonIgnore
     private final RepoMetaRegistry repoMetaRegistry;
 
 
     // Key: 자바 변수명(level), Value: DB 컬럼명(user_level)
     private final Map<String, String> fieldToColumn = new HashMap<>();
     private final Map<String, String> fieldToType = new HashMap<>();
+
+    private final Map<String, String> columnToField = new HashMap<>();
 
     // Key: 자바 변수명(orders), Value: 타겟 엔티티 클래스명(OrderEntity)
     private final Map<String, String> relationTargets = new HashMap<>();
@@ -39,7 +43,9 @@ public class EntityMeta {
 
     public void addMapping(String fieldName, String columnName) {
         this.fieldToColumn.put(fieldName, columnName);
+        this.columnToField.put(columnName, fieldName);
     }
+
 
 
 
@@ -47,7 +53,7 @@ public class EntityMeta {
 
     public String getColumn(String fieldName) {
 
-        LogPrinter.info("fieldToColumn: " + fieldToColumn.toString());
+        System.out.println("fieldToColumn: " + fieldToColumn);
         return fieldToColumn.get(fieldName);
     }
 
@@ -57,6 +63,12 @@ public class EntityMeta {
         System.out.println("[디버그] fieldToType 전체: " + fieldToType);
         System.out.println("[디버그] getFieldType 요청: " + fieldName + " -> " + fieldToType.get(fieldName));
         return fieldToType.get(fieldName);
+    }
+
+    public String getFieldName(String columnName) {
+
+
+        return columnToField.get(columnName);
     }
 
 
@@ -83,4 +95,18 @@ public class EntityMeta {
                 ", relationTargets=" + relationTargets +
                 '}';
     }
+
+
+    public Map<String, String> getFieldToColumn() {
+        return fieldToColumn;
+    }
+
+    public Map<String, String> getFieldToType() {
+        return fieldToType;
+    }
+
+    public Map<String, String> getRelationTargets() {
+        return relationTargets;
+    }
+
 }

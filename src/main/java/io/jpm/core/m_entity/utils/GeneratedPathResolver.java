@@ -25,6 +25,7 @@ public class GeneratedPathResolver {
 
         return DEFAULT_RESULT_PATH + "." + packagePath + "." + generatedClassName;
     }
+
     public static Path resolveResult(String fqcn, Filer filer)  {
 
         int lastDot = fqcn.lastIndexOf('.');
@@ -72,4 +73,6 @@ public class GeneratedPathResolver {
             return Paths.get(System.getProperty("user.dir"));
         }
     }
+
+
 }

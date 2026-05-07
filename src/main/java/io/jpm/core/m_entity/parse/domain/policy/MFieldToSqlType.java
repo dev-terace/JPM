@@ -12,7 +12,7 @@ public class MFieldToSqlType {
 
 
 
-    public static String resolveType(MField handleField) {
+    public static String resolveType(MField<?> handleField) {
 
         ResolveType defaultResolveType = ResolveType.valueOf(handleField.getType().name());
         boolean ifPrimaryKeyReturnBigInt = handleField.isPrimaryKey()

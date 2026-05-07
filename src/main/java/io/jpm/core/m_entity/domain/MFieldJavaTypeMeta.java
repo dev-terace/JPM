@@ -1,5 +1,6 @@
 package io.jpm.core.m_entity.domain;
 
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.m_entity.utils.GeneratedPathResolver;
 
 import javax.annotation.processing.Filer;
@@ -29,14 +30,9 @@ public class MFieldJavaTypeMeta {
     public void addTypeInfo(String fieldName, String mFieldType)
     {
         String packageName = MFieldJavaType.getMFieldTypeMap(mFieldType);
-
-
-
-            String simpleName = packageName.substring(packageName.lastIndexOf('.') + 1);
-            typeInfos.add(new info(fieldName, simpleName));
-            importPackages.add(packageName);
-
-
+        String simpleName = packageName.substring(packageName.lastIndexOf('.') + 1);
+        typeInfos.add(new info(fieldName, simpleName));
+        importPackages.add(packageName);
 
     }
 

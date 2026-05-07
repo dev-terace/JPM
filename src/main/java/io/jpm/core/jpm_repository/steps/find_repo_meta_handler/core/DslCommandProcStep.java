@@ -49,6 +49,7 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
     public DslCommandProcStep(BuildTimeMetadataCache cache,
                               ErrorTracker errorTracker,
                               AstContext astContext) {
+
         this.repoMetaRegistry  = cache.getRepoMetaRegistry();
 
         this.dslCommandProcessorValidStep = new DslCommandProcessorValidStep(cache, errorTracker, new ColumnResolver(repoMetaRegistry));
@@ -178,7 +179,9 @@ public class DslCommandProcStep implements Step<DslCommandProcContext> {
 
             methodMeta.setTargetType(rawArgs.get(0).replace(".class", ""));
         }
+
     }
+
 
 
 

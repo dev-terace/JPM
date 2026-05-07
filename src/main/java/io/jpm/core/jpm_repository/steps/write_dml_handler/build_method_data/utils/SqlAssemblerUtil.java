@@ -51,6 +51,7 @@ public class SqlAssemblerUtil {
                     ? ctx.getTablePrefix()
                     : String.join(", ", ctx.getTables());
 
+
             sql.append("SELECT ").append(ctx.getColumns().isEmpty() ? "*" : ctx.getColumns())
                     .append("\nFROM ").append(fromClause);
 

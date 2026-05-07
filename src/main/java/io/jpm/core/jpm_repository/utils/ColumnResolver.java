@@ -20,6 +20,7 @@ public class ColumnResolver {
 
 
     public String resolve(String colStr, BuildContext ctx) {
+
         if (colStr.contains("::")) {
             String alias = null;
             String processingStr = colStr;
@@ -41,12 +42,15 @@ public class ColumnResolver {
 
             // 3. 메타데이터에서 실제 컬럼명 조회
             EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(className);
+
             if (entityMeta == null) {
-                // 메타데이터가 없으면 최소한 필드명이라도 반환
                 return (alias != null ? alias + "." : "") + fieldName;
             }
 
             String colName = entityMeta.getColumn(fieldName);
+
+
+
             if (colName == null) colName = fieldName;
 
             // 4. 최종 문자열 조립

@@ -1,5 +1,7 @@
 package io.jpm.core.jpm_repository.domain.cache.interfaces;
 
+import java.io.InputStream;
+
 public interface EntityRelationRegistry {
 
    void registerPkFieldType(String entityName, String pkFieldType);
@@ -8,4 +10,6 @@ public interface EntityRelationRegistry {
    String resolveFkType(String entityName, String fkFieldName);
    String getPkFieldType(String entityName);
    String getPkFieldName(String entityName);
+   String toJson();
+
 }

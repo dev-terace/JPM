@@ -1,0 +1,85 @@
+package io.jpm.core.jpm_repository.runtime.core.node;
+
+
+import io.jpm.common.utils.LogPrinter;
+import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
+import io.jpm.core.jpm_repository.domain.model.BuildContext;
+import io.jpm.core.jpm_repository.domain.model.DslStatementV2;
+import io.jpm.core.jpm_repository.domain.model.EntityMeta;
+import io.jpm.core.jpm_repository.runtime.core.SqlNodeParserStepsV2;
+
+import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core.sql_node_parser.build_sql_nodes.support.node.SqlNode;
+
+import java.util.List;
+
+
+
+public class JoinGroupNodeV2 implements SqlNode {
+    private final String joinType;
+    private final String targetClass;   // 예: "OrderItemEntity.class"
+    private final String leftCol;       // 예: "orders.id"
+    private final String rightCol;      // 예: "item_summary.order_id"
+    private final List<DslStatementV2> subStatements; // 👈 이 변수명으로 통일
+
+    private final SqlNodeParserStepsV2 nodeParser;
+    private final RepoMetaRegistry repoMetaRegistry;
+
+    public JoinGroupNodeV2(String cmd, List<String> args, List<DslStatementV2> subStatements, EntityMeta entityMeta, SqlNodeParserStepsV2 nodeParser, RepoMetaRegistry repoMetaRegistry) {
+        this.joinType = cmd.startsWith("left") ? "LEFT JOIN" : "INNER JOIN";
+        // args: [targetClass, leftCol, rightCol]
+        this.targetClass = (!args.isEmpty()) ? args.get(0) : "";
+
+        this.leftCol = (args.size() > 1) ? args.get(1) : "";
+        this.rightCol = (args.size() > 2) ? args.get(2) : "";
+        this.subStatements = subStatements; // 생성자 주입
+        this.nodeParser = nodeParser;
+        this.repoMetaRegistry = repoMetaRegistry;
+    }
+
+    @Override
+    public void apply(BuildContext ctx) {
+        String joinSql = toSql(ctx);
+        if (!joinSql.isEmpty()) {
+            ctx.getJoins().add(joinSql);
+        }
+    }
+
+    @Override
+    public String toSql(BuildContext ctx) {
+        // 1. 진짜 별칭(Alias) 추출: "item_summary.order_id" -> "item_summary"
+        String leftDefaultAlias = "sub";
+
+
+        LogPrinter.info("[joinGroupNode] leftCol: "+ leftCol + ", rightCol: " + rightCol);
+
+        if (leftCol.contains(".")) {
+            leftDefaultAlias = leftCol.split("\\.")[0];
+        } else if (leftCol.contains("|")) {
+            leftDefaultAlias = leftCol.split("\\|")[0];
+        }
+
+        // 2. 서브쿼리용 메타데이터 결정
+        // Join 대상인 OrderItemEntity.class의 메타를 가져와야 서브쿼리 내부 컬럼명이 정확히 변환됩니다.
+        String cleanedClass = targetClass.replace(".class", "").replace("class ", "");
+        EntityMeta subMeta = repoMetaRegistry.getEntityMeta(cleanedClass);
+
+
+        // 🚀 여기서 this.subStatements를 사용합니다!
+        String subQuerySql = nodeParser.generateSqlFromStatements(this.subStatements);
+
+        // 3. ON 조건 정제
+
+        // 최종 SQL 조립
+        return String.format("%s (\n%s\n) AS %s ON %s = %s",
+                joinType,
+                indent(subQuerySql),
+                leftDefaultAlias,
+                leftCol,
+                rightCol);
+    }
+
+    private String indent(String sql) {
+        if (sql == null || sql.isEmpty()) return "";
+        return "    " + sql.replace("\n", "\n    ");
+    }
+}

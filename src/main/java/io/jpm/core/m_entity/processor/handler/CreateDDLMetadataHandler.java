@@ -79,7 +79,7 @@ public class CreateDDLMetadataHandler extends AstHandler<DDLHandlerContext> {
             try {
                 MEntityInfo currentEntityInfo = cache.getEntityInfoMap().get(className);
                 // 여기서 꺼내는 데이터는 scanEntity에서 Tree API로 채운 데이터입니다.
-                List<MField> fields = cache.getParsedVariablesCache().get(className);
+                List<MField<?>> fields = cache.getParsedVariablesCache().get(className);
 
                 DDLTableMetadata table = TableMetadataFactory.create(fields, currentEntityInfo, cache.getEntityInfoMap());
 

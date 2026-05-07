@@ -7,10 +7,11 @@ public class RepoMeta {
     private final String className;  // 실제 자바 클래스 이름
     private final String namespace;  // 어노테이션의 name 또는 클래스 이름
     private final List<MethodMeta> methods = new ArrayList<>();
-
-    public RepoMeta(String className, String namespace) {
+    private final String qualifiedClassName;
+    public RepoMeta(String className, String namespace, String qualifiedClassName) {
         this.className = className;
         this.namespace = namespace;
+        this.qualifiedClassName = qualifiedClassName;
     }
 
     public void addMethod(MethodMeta method) {
@@ -20,6 +21,7 @@ public class RepoMeta {
     // Getters
     public String getClassName() { return className; }
     public String getNamespace() { return namespace; }
+    public String getQualifiedClassName() { return qualifiedClassName; }
     public List<MethodMeta> getMethods() { return methods; }
 
 

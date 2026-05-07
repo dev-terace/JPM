@@ -23,7 +23,7 @@ public class MetadataCacheV3 {
     public final Map<String, MEntityInfo> entityInfoMap;
 
     // 파싱된 MField 객체들의 캐시 (빌드 과정 중 재사용)
-    public final Map<String, List<MField>> parsedVariablesCache;
+    public final Map<String, List<MField<?>>> parsedVariablesCache;
 
     private final RepoMetaRegistry repoMetaRegistry;
     private final EntityRelationRegistry entityRelationRegistry;
@@ -81,12 +81,12 @@ public class MetadataCacheV3 {
      */
     private PairResult processFieldsAndFindPkAndFk(TypeElement element, List<List<AstMFieldParserV2.Pair>> rawData) {
         String pkColumnName = "id"; // 기본값 (PK를 못 찾을 경우 대비)
-        List<MField> variables = new ArrayList<>();
+        List<MField<?>> variables = new ArrayList<>();
 
         for (List<AstMFieldParserV2.Pair> fieldRawData : rawData) {
             // 🚀 MObjectFactory가 MTreeUtils.Pair를 지원하도록 업데이트되어야 함
             try {
-                MField var = objectFactory.createMVariableV2(fieldRawData, errorTracker);
+                MField<?> var = objectFactory.createMVariableV2(fieldRawData, errorTracker);
 
                 variables.add(var);
 
@@ -126,15 +126,15 @@ public class MetadataCacheV3 {
      * 내부 데이터 전달용 클래스 (기존 Pair 클래스의 V2 버전)
      */
     private static class PairResult {
-        private final List<MField> variables;
+        private final List<MField<?>> variables;
         private final String pkColumnName;
 
-        private PairResult(List<MField> variables, String pkColumnName) {
+        private PairResult(List<MField<?>> variables, String pkColumnName) {
             this.variables = variables;
             this.pkColumnName = pkColumnName;
         }
 
-        public List<MField> getVariables() { return variables; }
+        public List<MField<?>> getVariables() { return variables; }
         public String getPkColumnName() { return pkColumnName; }
     }
 }

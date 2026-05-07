@@ -16,7 +16,7 @@ import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core
 import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.utils.GroupExtractorUtil;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +26,7 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
     private final ArgResolver argResolver;
     private final ColumnResolver   columnResolver;
     private final SqlNodeParserSteps  nodeParser;
+
 
     public BuildSqlNodesStep(RepoMetaRegistry repoMetaRegistry,
                              ArgResolver argResolver,
@@ -37,8 +38,10 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
         this.nodeParser           = nodeParser;
     }
 
+
     @Override
     public void execute(SqlNodeParserContext ctx) {
+
         List<DslStatement> statements = ctx.getStatements();
         BuildContext       buildCtx   = ctx.getBuildContext();
         EntityMeta         entityMeta = ctx.getEntityMeta();
@@ -63,8 +66,6 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
 
                 case "select":
                     ctx.addNode(new SelectNode(stmt.getArgs(), columnResolver));
-
-
                     break;
 
                 case "selectRaw":
@@ -101,11 +102,11 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
                 }
 
                 case "where":
-                case "and":
+                case "whereAnd":
                     where.addCondition(buildCondition(" AND ", stmt, args, buildCtx));
                     break;
 
-                case "or":
+                case "whereOr":
                     where.addCondition(buildCondition(" OR ", stmt, args, buildCtx));
                     break;
 
@@ -169,6 +170,7 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
             }
         }
 
+
         if (!where.isEmpty()) ctx.addNode(where);
         if (!having.isEmpty()) ctx.addNode(having);
 
@@ -188,6 +190,7 @@ public class BuildSqlNodesStep implements Step<SqlNodeParserContext> {
                     : "mj" + ctx.getJoins().size();
 
             EntityMeta targetMeta = entityMeta.getRelationTargetMeta(fieldName);
+
             if (targetMeta == null) {
                 LogPrinter.info("[WARNING] mapJoin 타겟 메타 없음: field=" + fieldName);
                 return;

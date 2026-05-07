@@ -35,7 +35,7 @@ public class DDLScriptBuilder {
         buildDropAndCreate(sb, tables);
         // 2. 컬럼 추가 (ALTER - UPDATE 정책일 때만)
         buildAddColumns(sb, tables);
-        Log.info(tables.toString());
+
         // 3. 외래키 제약조건 (FK)
         new DDLForeignKeyGenerator(dialect, tables).generate(sb);
         // 4. 인덱스 생성 (INDEX)

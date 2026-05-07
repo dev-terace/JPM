@@ -27,6 +27,7 @@ public class WriteDMLHandler implements AbstractHandler<JpmRepoContext> {
         for (RepoMeta repoMeta : context.getRepoMetas()) {
             buildMethodDataMainStep.execute(new BuildMethodDataContext(context, repoMeta));
 
+
             validateErrorMainStep.execute(context);
 
             List<MybatisXmlGenerator.MethodData> methodDataList = buildMethodDataMainStep.getResult();

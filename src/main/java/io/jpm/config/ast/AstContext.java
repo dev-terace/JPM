@@ -31,7 +31,7 @@ public final class AstContext {
     private final Types types;
     private final Filer filer; // ✅ 추가
     private final JpmToolbox jpmToolbox;
-    private Map<String, TypeElement> compilingElementMap = new HashMap<>();
+    private final Map<String, TypeElement> compilingElementMap = new HashMap<>();
 
 
     public AstContext(ProcessingEnvironment processingEnv) {

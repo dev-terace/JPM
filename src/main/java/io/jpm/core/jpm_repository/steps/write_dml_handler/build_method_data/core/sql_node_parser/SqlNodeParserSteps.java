@@ -21,11 +21,14 @@ import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
 import java.util.List;
 
+
+
 public class SqlNodeParserSteps implements Step<SqlMapBinderContext> {
     private final DetectJoinPrefixStep detectJoinPrefixStep = new DetectJoinPrefixStep();
     private final BuildSqlNodesStep buildSqlNodesStep;
     private final AliasPreScannerSteps aliasPreScannerSteps;
     private final RepoMetaRegistry repoMetaRegistry;
+
     public SqlNodeParserSteps(RepoMetaRegistry repoMetaRegistry,
                          ArgResolver argResolver,
                          ColumnResolver columnResolver
@@ -40,11 +43,13 @@ public class SqlNodeParserSteps implements Step<SqlMapBinderContext> {
     public void execute(SqlMapBinderContext ctx) throws Exception {
         String finalSql = buildSql(ctx.getMethod().getStatements(), ctx.getBuildContext(), ctx.getEntityMeta());
         ctx.setFinalSql(finalSql);
+
     }
 
     // ② SQL 문자열 직접 반환
     public String generateSqlFromStatements(List<DslStatement> statements, EntityMeta entityMeta) {
         BuildContext buildCtx = new BuildContext(entityMeta);
+
         return buildSql(statements, buildCtx, entityMeta);
     }
 
@@ -52,23 +57,23 @@ public class SqlNodeParserSteps implements Step<SqlMapBinderContext> {
 
 
     private String buildSql(List<DslStatement> statements, BuildContext buildCtx, EntityMeta entityMeta) {
+
         try {
+
+
             // 1. 별칭 사전 스캔
             aliasPreScannerSteps.execute(
-                    new AliasScanContext(statements, buildCtx, repoMetaRegistry)
-            );
-
-            // 2. Statement → Node 변환
+                    new AliasScanContext(statements, buildCtx, repoMetaRegistry));
             SqlNodeParserContext sqlNodeCtx = new SqlNodeParserContext(statements, buildCtx, entityMeta);
             detectJoinPrefixStep.execute(sqlNodeCtx);
             buildSqlNodesStep.execute(sqlNodeCtx);
 
-            // 3. Node 실행
+
             for (SqlNode node : sqlNodeCtx.getNodes()) {
                 node.apply(buildCtx);
             }
 
-            // 4. SQL 조립
+
             return SqlAssemblerUtil.assemble(buildCtx);
 
         } catch (CustomProcessorException e) {

@@ -7,7 +7,7 @@ import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
-import io.jpm.core.jpm_repository.domain.model.ResultMapMeta;
+import io.jpm.core.jpm_repository.domain.model.result_map_meta.ResultMapMeta;
 import io.jpm.core.jpm_repository.generator.MybatisXmlGenerator;
 import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.context.SqlMapBinderContext;
 import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.composite.CompositeSqlMapperBinderStep;
@@ -24,34 +24,34 @@ public class BuildMethodDataMainStep implements Step<BuildMethodDataContext> {
 
     @Override
     public void execute(BuildMethodDataContext ctx) throws Exception {
-        RepoMetaRegistry repoMetaRegistry = ctx.getJpmRepoContext().getCache().getRepoMetaRegistry();
-        EntityRelationRegistry entityRelationRegistry = ctx.getJpmRepoContext().getCache().getEntityRelationRegistry();
-        CompositeStep<SqlMapBinderContext> binder           = new CompositeSqlMapperBinderStep(
-                repoMetaRegistry, new ColumnResolver(repoMetaRegistry)
-        );
+        try {
+            RepoMetaRegistry repoMetaRegistry = ctx.getJpmRepoContext().getCache().getRepoMetaRegistry();
+            EntityRelationRegistry entityRelationRegistry = ctx.getJpmRepoContext().getCache().getEntityRelationRegistry();
+
+            CompositeStep<SqlMapBinderContext> binder = new CompositeSqlMapperBinderStep(
+                    repoMetaRegistry, new ColumnResolver(repoMetaRegistry)
+            );
 
 
-
-        result = new ArrayList<>();
-
-
-        for (MethodMeta method : ctx.getRepoMeta().getMethods()) {
-            LogPrinter.info("[BuildMethodDataMainStep] MethodName=" + method.getMethodName());
-
-            EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(method.getTargetType());
-
-            SqlMapBinderContext sqlMapBinderContext = new SqlMapBinderContext(method, entityMeta);
-            binder.execute(sqlMapBinderContext);
-
-            String finalSql = sqlMapBinderContext.getFinalSql();
+            result = new ArrayList<>();
 
 
-            ResultMapMeta resultMapMeta = ResultMapMeta.from(method, repoMetaRegistry, entityRelationRegistry);
+            for (MethodMeta method : ctx.getRepoMeta().getMethods()) {
+                LogPrinter.info("[BuildMethodDataMainStep] MethodName=" + method.getMethodName());
+                LogPrinter.info("[BuildMethodDataMainStep] TargetType=" + method.getTargetType());
 
-            result.add(new MybatisXmlGenerator.MethodData(method, resultMapMeta, finalSql));
+                EntityMeta entityMeta = repoMetaRegistry.getEntityMeta(method.getTargetType());
 
+                SqlMapBinderContext sqlMapBinderContext = new SqlMapBinderContext(method, entityMeta);
+                binder.execute(sqlMapBinderContext);
 
+                String finalSql = sqlMapBinderContext.getFinalSql();
+                ResultMapMeta resultMapMeta = ResultMapMeta.from(method, repoMetaRegistry, entityRelationRegistry, ctx.getRepoMeta(), ctx.getJpmRepoContext().getContext().getFiler());
+                result.add(new MybatisXmlGenerator.MethodData(method, resultMapMeta, finalSql));
 
+            }
+        }catch (Exception e) {
+            LogPrinter.exceptionInfo(e);
 
         }
     }

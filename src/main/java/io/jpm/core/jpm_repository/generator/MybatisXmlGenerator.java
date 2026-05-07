@@ -4,7 +4,8 @@ import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.core.jpm_repository.domain.model.MapJoinMeta;
 import io.jpm.core.jpm_repository.domain.model.MethodMeta;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
-import io.jpm.core.jpm_repository.domain.model.ResultMapMeta;
+import io.jpm.core.jpm_repository.domain.model.result_map_meta.ResultMapFactory;
+import io.jpm.core.jpm_repository.domain.model.result_map_meta.ResultMapMeta;
 import io.jpm.common.utils.LogPrinter;
 
 import java.util.List;
@@ -180,7 +181,7 @@ public class MybatisXmlGenerator {
                         .append("type=\"").append(methodMeta.getTargetType()).append("\" autoMapping=\"true\">\n");
 
                 // 1-1. <id> 매핑 (PK)
-                for (ResultMapMeta.FieldMapping idMap : meta.getIdMappings()) {
+                for (ResultMapFactory.FieldMapping idMap : meta.getIdMappings()) {
                     // 🚀 [적용] property와 column 정제
                     String prop = toPropertyName(idMap.getFieldName());
                     String col = toColumnName(idMap.getColumnName());
@@ -188,7 +189,7 @@ public class MybatisXmlGenerator {
                 }
 
                 // 1-2. <result> 매핑 (일반 필드)
-                for (ResultMapMeta.FieldMapping resultMap : meta.getResultMappings()) {
+                for (ResultMapFactory.FieldMapping resultMap : meta.getResultMappings()) {
                     // 🚀 [적용] property와 column 정제
                     String prop = toPropertyName(resultMap.getFieldName());
                     String col = toColumnName(resultMap.getColumnName());

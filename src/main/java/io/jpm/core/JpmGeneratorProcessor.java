@@ -2,6 +2,7 @@ package io.jpm.core;
 
 import com.google.auto.service.AutoService;
 
+import groovy.util.logging.Log;
 import io.jpm.common.exception.ErrorTracker;
 import io.jpm.common.exception.ErrorTrackerImpl;
 import io.jpm.config.AppConfig;
@@ -13,6 +14,8 @@ import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.ImmutableGlobalRegistry;
 import io.jpm.core.jpm_data_source_registry.JpmDataSourceRegistry;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.RepoMetaRegistryImpl;
+import io.jpm.core.jpm_repository.domain.cache.RepoRelationRegistryImpl;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DSLKeywords;
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.core.DslCommandProcStep;
@@ -24,15 +27,17 @@ import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.parse_metho
 import io.jpm.core.jpm_repository.steps.find_repo_meta_handler.infra.utils.LocalVariableCollector;
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 import io.jpm.core.m_entity.processor.MEntityPipelineV2;
+import org.gradle.internal.impldep.com.fasterxml.jackson.databind.ObjectMapper;
 
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -130,10 +135,50 @@ public class JpmGeneratorProcessor extends AbstractProcessor {
 
         try {
             mEntityProc.execute();
+
+
+            FileObject repoMetafile = processingEnv.getFiler()
+                    .createResource(
+                            StandardLocation.CLASS_OUTPUT, // ⭐ 이걸로 바꿔
+                            "",
+                            "repo-meta.json"
+                    );
+
+
+            FileObject entityRelationFile = processingEnv.getFiler()
+                    .createResource(
+                            StandardLocation.CLASS_OUTPUT, // ⭐ 이걸로 바꿔
+                            "",
+                            "entity-relation-meta.json"
+                    );
+
+
+            try (Writer writer = repoMetafile.openWriter()) {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.writerWithDefaultPrettyPrinter()
+                      .writeValue(writer, buildTimeMetadataCache.getRepoMetaRegistry()
+                      );
+            }
+
+
+
+
+
+            try (Writer writer = entityRelationFile.openWriter()) {
+                ObjectMapper mapper = new ObjectMapper();
+
+                LogPrinter.info("RelationRegistry json mapping : " + buildTimeMetadataCache.getRelationRegistry());
+                RepoRelationRegistryImpl rel = (RepoRelationRegistryImpl) buildTimeMetadataCache.getRelationRegistry();
+                writer.write(rel.toJson());
+            }
+
             jRepoProc.execute();
 
-        } catch (Exception e) {
 
+
+
+        } catch (Exception e) {
+            LogPrinter.exceptionInfo(e);
             throw new RuntimeException(e);
         }
 

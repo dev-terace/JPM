@@ -3,6 +3,7 @@ package io.jpm.config.ast;
 import io.jpm.api.MField;
 import io.jpm.common.exception.cache.domain.SourceLocationCache;
 import io.jpm.common.exception.cache.infra.SourceLocationCacheImpl;
+import io.jpm.common.utils.LogPrinter;
 import io.jpm.core.jpm_repository.domain.cache.MapParamRegistryImpl;
 import io.jpm.core.jpm_repository.domain.cache.RepoMetaRegistryImpl;
 import io.jpm.core.jpm_repository.domain.cache.RepoRelationRegistryImpl;
@@ -18,7 +19,7 @@ public class BuildTimeMetadataCache {
 
     // 철저하게 해당 인스턴스(빌드 세션)에서만 유지되는 로컬 상태
     private final Map<String, MEntityInfo> entityInfoMap = new HashMap<>();
-    private final Map<String, List<MField>> parsedVariablesCache = new HashMap<>();
+    private final Map<String, List<MField<?>>> parsedVariablesCache = new HashMap<>();
 
     //핸들러 캐시
     private final Map<Class<?>, Object> store = new HashMap<>();
@@ -50,7 +51,7 @@ public class BuildTimeMetadataCache {
         return entityInfoMap;
     }
 
-    public Map<String, List<MField>> getParsedVariablesCache() {
+    public Map<String, List<MField<?>>> getParsedVariablesCache() {
         return parsedVariablesCache;
     }
 
@@ -58,6 +59,8 @@ public class BuildTimeMetadataCache {
 
 
     public EntityRelationRegistry getRelationRegistry() {
+
+        LogPrinter.info("getRelationRegistry : " + relationRegistry);
         return relationRegistry;
     }
 
@@ -74,4 +77,5 @@ public class BuildTimeMetadataCache {
     public EntityRelationRegistry getEntityRelationRegistry() {
         return relationRegistry;
     }
+
 }

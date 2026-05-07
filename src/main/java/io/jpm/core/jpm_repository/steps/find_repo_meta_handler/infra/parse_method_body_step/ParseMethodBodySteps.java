@@ -34,6 +34,7 @@ public class ParseMethodBodySteps implements Step<MethodParseContext> {
     private final GlobalRegistry      globalRegistry;
     private final ArgumentTokenExtractor argumentTokenExtractor;
     private final AstContext astContext;
+
     public ParseMethodBodySteps(GlobalRegistry globalRegistry, AstContext astContext) {
         this.dslCommandProcStep = globalRegistry.commandProcessor();
         this.segmentInlinerStep = globalRegistry.segmentInliner();
@@ -55,6 +56,7 @@ public class ParseMethodBodySteps implements Step<MethodParseContext> {
         globalRegistry
                 .localVariableCollector()
                 .collect(body, mapParamRegistry);
+
 
         for (StatementTree stmt : body.getStatements()) {
             if (stmt instanceof ExpressionStatementTree) {
@@ -87,6 +89,7 @@ public class ParseMethodBodySteps implements Step<MethodParseContext> {
                         (command, rawArgs, methodMeta,
                         className, methodName, lineNumber)
                 );
+
 
             } else if (isSegmentCommand) {
                 segmentInlinerStep.execute(new SegmentInlinerContext(call, repoElement, mapParamRegistry, methodMeta));

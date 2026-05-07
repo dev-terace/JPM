@@ -1,15 +1,21 @@
 package io.jpm.core.jpm_repository.domain.cache;
 
-import io.jpm.common.utils.LogPrinter;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.common.utils.Pair;
+import org.gradle.internal.impldep.com.fasterxml.jackson.annotation.JsonAutoDetect;
 
+
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     // Key: EntityClassName (예: MEntity3), Value: FieldMetadata Map (Key: Java 필드명, Value: DB 컬럼명)
     private final Map<String, EntityMeta> registry = new HashMap<>();
@@ -28,9 +34,11 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
     private final Map<String, String> columnToField = new HashMap<>();
 
+
     public void addMapping(String fieldName, String columnName) {
         columnToField.put(columnName, fieldName); // 역방향 추가
     }
+
 
 
     public String getFieldType(String entityName, String fieldName) {
@@ -47,7 +55,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
         // 2. 만약 해당 엔티티 정보가 아예 없거나 안쪽 Map이 비어있을 경우 로그 출력
         if (innerMap == null || innerMap.isEmpty()) {
-            LogPrinter.info("[SEGMENT_NOT_FOUND] No variable names found for entity: " + entityName);
+
             return new ArrayList<>(); // 빈 리스트 반환 (NullPointerException 방지)
         }
 
@@ -56,20 +64,6 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
     }
 
 
-    //condition 에서 체크, inner/left에서 체크
-    //1.key: pk field, fieldType Map<EntityName, pkFieldType> pk 저장용
-    //2. fk: Map<EntityName, Map<fieldType, parentEntity> >
-
-    //mqRepoParser에서 탐색 시 검증
-    //field 값 case FK 를 탐
-
-    //case fk 일 시 Entity::fieldName 임 -> 분리
-    //2.에서 Map<FieldType, parentEntity>>을 가져옴
-    //fieldType에서 parentEntity를 추출함
-    //1.에서 entityName을 조회해서 pkFieldType을 가져옴
-    //Expression Arg와 pkFieldType을 비교함
-
-    // MParserUtils의 결과를 Registry에 등록
 
     public <T extends Pair> void register(String entityName, List<List<T>> rawMeta) {
 
@@ -149,9 +143,8 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
         classPathMap.put(simpleName, qualifiedName);
 
-        LogPrinter.info("[RepoMetaRegistry] entityClassName=" + simpleName + " entityClass=" + qualifiedName);
 
-        // EntityMeta 객체 생성 및 저장 로직도 여기에 함께 구현...
+        // EntityMeta 객체 생성 및  저장 로직도 여기에 함께 구현...
     }
 
     public String getEntityPath(String entityName) {
@@ -168,8 +161,6 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
     @Override
     public EntityMeta getEntityMeta(String entityName) {
-
-
         // 1️⃣ alias나 필드 포함된 경우 마지막 토큰만 추출
         // ex)
         // o1.orderEntity        -> orderEntity
@@ -178,9 +169,6 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
         String normalized = "";
         try {
-
-
-/*            LogPrinter.info("[RepoMetaRegistry] entityName=" + entityName);*/
 
             normalized = entityName;
             int lastDot = normalized.lastIndexOf('.');
@@ -212,6 +200,94 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
         }
         return null;
 
+    }
+
+    public static RepoMetaRegistryImpl fromJson(InputStream is) {
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+
+            Map<String, Object> root = mapper.readValue(
+                    is,
+                    new TypeReference<Map<String, Object>>() {}
+            );
+
+            RepoMetaRegistryImpl registry = new RepoMetaRegistryImpl();
+
+            Map<?, ?> entities = (Map<?, ?>) root.get("registry");
+
+            if (entities != null) {
+                for (Map.Entry<?, ?> entry : entities.entrySet()) {
+                    String entityName = String.valueOf(entry.getKey());
+                    Map<?, ?> entityJson = (Map<?, ?>) entry.getValue();
+
+                    String table = String.valueOf(entityJson.get("tableName"));
+                    EntityMeta meta = new EntityMeta(table, registry);
+
+                    // fieldToColumn
+                    Map<?, ?> rawFields = (Map<?, ?>) entityJson.get("fieldToColumn");
+                    if (rawFields != null) {
+                        for (Map.Entry<?, ?> f : rawFields.entrySet()) {
+                            meta.addMapping(
+                                    String.valueOf(f.getKey()),
+                                    String.valueOf(f.getValue())
+                            );
+                        }
+                    }
+
+                    // fieldToType
+                    Map<?, ?> rawTypes = (Map<?, ?>) entityJson.get("fieldToType");
+                    if (rawTypes != null) {
+                        for (Map.Entry<?, ?> t : rawTypes.entrySet()) {
+                            meta.addTypeMapping(
+                                    String.valueOf(t.getKey()),
+                                    String.valueOf(t.getValue())
+                            );
+                        }
+                    }
+
+                    registry.registry.put(entityName, meta);
+                }
+            }
+
+            // tableRegistry
+            Map<?, ?> tables = (Map<?, ?>) root.get("tableRegistry");
+            if (tables != null) {
+                for (Map.Entry<?, ?> e : tables.entrySet()) {
+                    registry.tableRegistry.put(
+                            String.valueOf(e.getKey()),
+                            String.valueOf(e.getValue())
+                    );
+                }
+            }
+
+            // entityAliasMap
+            Map<?, ?> aliases = (Map<?, ?>) root.get("entityAliasMap");
+            if (aliases != null) {
+                for (Map.Entry<?, ?> e : aliases.entrySet()) {
+                    registry.entityAliasMap.put(
+                            String.valueOf(e.getKey()),
+                            String.valueOf(e.getValue())
+                    );
+                }
+            }
+
+            // classPathMap
+            Map<?, ?> classPaths = (Map<?, ?>) root.get("classPathMap");
+            if (classPaths != null) {
+                for (Map.Entry<?, ?> e : classPaths.entrySet()) {
+                    registry.classPathMap.put(
+                            String.valueOf(e.getKey()),
+                            String.valueOf(e.getValue())
+                    );
+                }
+            }
+
+            return registry;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

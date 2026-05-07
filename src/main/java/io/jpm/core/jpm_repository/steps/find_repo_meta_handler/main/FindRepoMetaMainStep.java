@@ -43,13 +43,10 @@ public class FindRepoMetaMainStep implements Step<JpmRepoContext> {
 
         List<RepoMeta> repoMetas = new ArrayList<>();
 
-
-
         for (Element element : roundEnv.getElementsAnnotatedWith(JpmRepository.class)) {
             TypeElement repoElement = (TypeElement) element;
             ClassTree classTree     = trees.getTree(repoElement); // 여기서 가져오기
             RepoMeta repoMeta       = buildRepoMeta(element, context);
-
 
             for (Tree member : classTree.getMembers()) {
                 if (member instanceof MethodTree) {
@@ -73,16 +70,15 @@ public class FindRepoMetaMainStep implements Step<JpmRepoContext> {
 
     private RepoMeta buildRepoMeta(Element element, JpmRepoContext context) {
 
-
         TypeElement repoElement = (TypeElement) element;
-
-
-
-
         String className        = element.getSimpleName().toString();
         String namespace        = extractNamespace(repoElement, className);
+        String qualifiedClassName = ((TypeElement) element).getQualifiedName().toString();
 
-        return new RepoMeta(className, namespace);
+
+        LogPrinter.info("[FindRepoMetaStep]: qualifiedClassName: ]" + qualifiedClassName);
+
+        return new RepoMeta(className, namespace, qualifiedClassName);
     }
 
     private String extractNamespace(TypeElement repoElement, String defaultName) {

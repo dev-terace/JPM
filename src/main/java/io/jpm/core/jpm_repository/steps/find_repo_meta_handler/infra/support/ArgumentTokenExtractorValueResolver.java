@@ -60,6 +60,7 @@ public class ArgumentTokenExtractorValueResolver {
     // private helpers
     // -------------------------------------------------------------------------
 
+
     private String resolveMethodInvocation(MethodInvocationTree mCall,
                                            MapParamRegistryImpl mapParamRegistryImpl, boolean resolveToColumn) {
         try {

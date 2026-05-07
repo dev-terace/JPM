@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class TableMetadataFactory {
 
-    // 🚨 [삭제] 이 정적 맵은 비어있어서 문제를 일으킵니다. 삭제합니다.
+
 
 
     private static final SqlDialect dialect = AppConfig.getSqlDialectImpl();
@@ -23,7 +23,7 @@ public class TableMetadataFactory {
     /**
      * 클래스 정보를 바탕으로 TableMetadata를 생성합니다.
      */
-    public static DDLTableMetadata create(List<MField> variables,
+    public static DDLTableMetadata create(List<MField<?>> variables,
                                           MEntityInfo currentEntity,
                                           Map<String, MEntityInfo> globalEntityMap) { // 파라미터 이름 명확하게 변경
         if (variables == null || currentEntity == null) {
@@ -31,7 +31,7 @@ public class TableMetadataFactory {
         }
 
         List<DDLColumnMetadata> columns = new ArrayList<>();
-        for (MField var : variables) {
+        for (MField<?> var : variables) {
             // 🚨 [수정] 전체 엔티티 맵(globalEntityMap)을 하위 메서드로 전달
             columns.add(buildColumnMetadata(var, globalEntityMap));
         }
@@ -43,7 +43,7 @@ public class TableMetadataFactory {
      * 개별 MField를 ColumnMetadata로 변환합니다.
      */
     // 🚨 [수정] 파라미터 추가 (Map<String, MEntityInfo> globalEntityMap)
-    private static DDLColumnMetadata buildColumnMetadata(MField var, Map<String, MEntityInfo> globalEntityMap) {
+    private static DDLColumnMetadata buildColumnMetadata(MField<?> var, Map<String, MEntityInfo> globalEntityMap) {
         String type = resolveSqlType(var);
         String finalDefaultValue = resolveDefaultValue(var);
         boolean finalNullable = !var.isPrimaryKey() && var.isNullable();
@@ -68,7 +68,7 @@ public class TableMetadataFactory {
     /**
      * SQL 타입 결정 로직 (VARCHAR 길이 처리 등)
      */
-    private static String resolveSqlType(MField var) {
+    private static String resolveSqlType(MField<?> var) {
         String type = MFieldToSqlType.resolveType(var);
         if (var.getType() == MFieldTypeEnum.STRING) {
             return "VARCHAR(" + var.getLength() + ")";
@@ -88,7 +88,7 @@ public class TableMetadataFactory {
     /**
      * 기본값(Default Value) 처리 로직
      */
-    private static String resolveDefaultValue(MField var) {
+    private static String resolveDefaultValue(MField<?> var) {
         if (var.isPrimaryKey() && var.isAutoIncrement()) {
             return null;
         }
@@ -115,7 +115,7 @@ public class TableMetadataFactory {
      * 외래 키(FK) 설정 로직
      */
     // 🚨 [수정] 파라미터로 받은 맵을 사용하여 조회하도록 변경
-    private static void applyForeignKey(DDLColumnMetadata column, MField var, Map<String, MEntityInfo> globalEntityMap) {
+    private static void applyForeignKey(DDLColumnMetadata column, MField<?> var, Map<String, MEntityInfo> globalEntityMap) {
         if (var.getType() == MFieldTypeEnum.FK) {
             String targetClassName = var.getParentClassName();
 

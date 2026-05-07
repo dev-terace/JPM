@@ -8,14 +8,7 @@ public class ValidateErrorMainStep implements Step<JpmRepoContext> {
 
     @Override
     public void execute(JpmRepoContext ctx) {
-
-
-
         String errorMessage = ctx.getErrorTracker().reportChain();
-
-
-
-
         if (errorMessage != null) throw new IllegalArgumentException(errorMessage);
     }
 }
