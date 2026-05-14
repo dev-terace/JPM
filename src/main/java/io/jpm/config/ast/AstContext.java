@@ -1,7 +1,6 @@
 package io.jpm.config.ast;
 
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -34,9 +33,10 @@ public final class AstContext {
     private final Map<String, TypeElement> compilingElementMap = new HashMap<>();
 
 
+
     public AstContext(ProcessingEnvironment processingEnv) {
 
-        this.trees = JavacTrees.instance(processingEnv);
+        this.trees = Trees.instance(processingEnv);
         this.jpmToolbox = new JpmToolbox(processingEnv);
         JavacProcessingEnvironment javacEnv =
                 (JavacProcessingEnvironment) processingEnv;
@@ -49,7 +49,7 @@ public final class AstContext {
         this.messager = processingEnv.getMessager();
         this.elements = processingEnv.getElementUtils();
         this.types = processingEnv.getTypeUtils();
-        this.filer = processingEnv.getFiler(); // ✅ 추가
+        this.filer = processingEnv.getFiler();
 
     }
 

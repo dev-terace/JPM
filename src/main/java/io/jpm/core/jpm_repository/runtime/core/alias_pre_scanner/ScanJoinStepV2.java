@@ -1,5 +1,6 @@
 package io.jpm.core.jpm_repository.runtime.core.alias_pre_scanner;
 
+import io.jpm.common.utils.CustomLogger;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.Step;
 import io.jpm.core.jpm_repository.domain.model.DslStatementV2;
@@ -13,6 +14,7 @@ import java.util.List;
 public class ScanJoinStepV2 implements Step<AliasScanContextV2> {
 
     private static final List<String> JOIN_COMMANDS = Arrays.asList("innerJoin", "leftJoin");
+    private static final CustomLogger log = CustomLogger.getLogger(ScanJoinStepV2.class);
 
     @Override
     public void execute(AliasScanContextV2 ctx) {
@@ -35,9 +37,9 @@ public class ScanJoinStepV2 implements Step<AliasScanContextV2> {
                 ctx.getBuildContext().registerAlias(rawClass,    finalAlias);
                 ctx.getBuildContext().registerAlias(finalAlias,  actualTable);
 
-                System.out.println("[Alias join Register] table -> alias : " + actualTable + " -> " + finalAlias);
-                System.out.println("[Alias join Register] class -> alias : " + rawClass + " -> " + finalAlias);
-                System.out.println("[Alias join Register] alias -> table : " + finalAlias + " -> " + actualTable);
+                log.debug("table -> alias : {} -> {}", actualTable, finalAlias);
+                log.debug("class -> alias : {} -> {}", rawClass, finalAlias);
+                log.debug("alias -> table : {} -> {}", finalAlias, actualTable);
 
             } catch (Exception e) {
                 LogPrinter.exceptionInfo(e);

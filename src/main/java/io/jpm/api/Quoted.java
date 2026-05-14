@@ -1,6 +1,8 @@
 package io.jpm.api;
 
-public class Quoted  implements IArg, JpmAbstractQuerySegment.SelectRawResultArg {
+import io.jpm.api.terrace_query.TerraceQuery;
+
+public class Quoted  implements IArg, TerraceQuery.SelectRawResultArg {
     public String val;
     public Object origin;
     public Quoted(Object v) {

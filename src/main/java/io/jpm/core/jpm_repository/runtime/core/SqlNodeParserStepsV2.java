@@ -1,6 +1,7 @@
 package io.jpm.core.jpm_repository.runtime.core;
 
 import io.jpm.common.exception.CustomProcessorException;
+import io.jpm.common.utils.CustomLogger;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.Step;
 import io.jpm.core.jpm_repository.domain.cache.RepoRelationRegistryImpl;
@@ -23,13 +24,13 @@ import java.util.List;
 
 
 
-
-
 public class SqlNodeParserStepsV2 implements Step<SqlMapBinderContextV2> {
     private final DetectJoinPrefixStepV2 detectJoinPrefixStep = new DetectJoinPrefixStepV2();
     private final AliasPreScannerStepsV2 aliasPreScannerSteps;
     private final RepoMetaRegistry repoMetaRegistry;
     private final BuildSqlNodesStepV2 buildSqlNodesStepV2;
+    private final CustomLogger log = CustomLogger.getLogger(SqlNodeParserStepsV2.class);
+
 
 
     public SqlNodeParserStepsV2( RepoMetaRegistry repoMetaRegistry
@@ -68,7 +69,7 @@ public class SqlNodeParserStepsV2 implements Step<SqlMapBinderContextV2> {
             );
 
             // 2. Statement → Node 변환
-            System.out.println("[SqlNodeParserStepsV2] statements" + statements);
+            log.debug("[statements] : {}", statements);
 
             SqlNodeParserContextV2 sqlNodeCtx = new SqlNodeParserContextV2(statements, buildCtx);
             detectJoinPrefixStep.execute(sqlNodeCtx);
@@ -84,7 +85,7 @@ public class SqlNodeParserStepsV2 implements Step<SqlMapBinderContextV2> {
 
             // 4. SQL 조립
 
-            System.out.println("[SqlNodeParserStepsV2] sql : " + SqlAssemblerUtil.assemble(buildCtx));
+            log.debug(SqlAssemblerUtil.assemble(buildCtx));
 
 
             return SqlAssemblerUtil.assemble(buildCtx);

@@ -1,6 +1,7 @@
-package io.jpm.api;
+package io.jpm.api.terrace_query;
 
 
+import io.jpm.api.*;
 import io.jpm.core.jpm_repository.domain.model.DslStatementV2;
 
 import java.io.Serializable;
@@ -24,41 +25,11 @@ public class TerraceQuery {
     public Raw r(Object obj) { return new Raw(obj); }
     public  <E, R> Raw r(MFieldRef<E, R> fieldRef) { return new Raw(fieldRef); }
 
-    public  Quoted q(String val) { return new Quoted(val); }
+    public Quoted q(String val) { return new Quoted(val); }
 
-    public  Bind b(String val) { return new Bind(val); }
+    public Bind b(String val) { return new Bind(val); }
     public  <E, R> Bind b(MFieldRef<E, R> fieldRef) { return new Bind(fieldRef); }
 
-/*    public static class AliasedField<E, R extends MField<?>> implements SelectRawResultArg, Serializable {
-
-        public final String tableAlias;   // u1
-        public final MFieldRef<E, R> fieldRef;
-        public final String selectAlias;  // u1_order
-
-        public AliasedField(String tableAlias,
-                            MFieldRef<E, R> fieldRef,
-                            String selectAlias) {
-            this.tableAlias = tableAlias;
-            this.fieldRef = fieldRef;
-            this.selectAlias = selectAlias;
-        }
-
-  *//*      public AliasedField<E, R> as(String selectAlias) {
-            return new AliasedField<>(this.tableAlias, this.fieldRef, selectAlias);
-        }*//*
-
-        public String describe() {
-            // "oi.OrderItemEntity::getOrderId" 또는 "oi.OrderItemEntity::getOrderId as u1_order"
-            String base = tableAlias + "." + fieldRef.describe();
-            return selectAlias != null ? base + " AS " + selectAlias : base;
-        }
-
-        @Override
-        public String toString() {
-            return describe();
-        }
-
-    }*/
 
     // 2. 사용자가 호출할 col 메서드 (정적 메서드로 선언하여 어디서든 사용)
     public  <E, R extends MField<?>> AliasedField<E, R> prefix(String prefix, MFieldRef<E, R> fieldRef) {
@@ -137,6 +108,11 @@ public class TerraceQuery {
         statements.add(new DslStatementV2("select", Arrays.asList(obj)));
     }
 
+    public  RawSelectBuilder selectRaw(String rawSqls)
+    {
+        return  new RawSelectBuilder(this, rawSqls);
+    }
+/*
     public void selectRaw(String rawSqls) {
         statements.add(new DslStatementV2("selectRaw", Collections.singletonList(rawSqls)));
     }
@@ -164,6 +140,7 @@ public class TerraceQuery {
         args.addAll(Arrays.asList(field));
         statements.add(new DslStatementV2("selectRawResult", args));
     }
+*/
 
 
 

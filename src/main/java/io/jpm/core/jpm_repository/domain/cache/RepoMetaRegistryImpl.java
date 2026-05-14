@@ -3,10 +3,12 @@ package io.jpm.core.jpm_repository.domain.cache;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jpm.common.utils.CustomLogger;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.EntityMeta;
 import io.jpm.common.utils.Pair;
 import org.gradle.internal.impldep.com.fasterxml.jackson.annotation.JsonAutoDetect;
+import org.gradle.internal.impldep.com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 import java.io.InputStream;
@@ -34,6 +36,9 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
 
     private final Map<String, String> columnToField = new HashMap<>();
 
+
+    @JsonIgnore
+    private static final CustomLogger log = CustomLogger.getLogger(RepoMetaRegistryImpl.class);
 
     public void addMapping(String fieldName, String columnName) {
         columnToField.put(columnName, fieldName); // 역방향 추가
@@ -81,7 +86,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
             for (T pair : fieldInfo) {
                 // 1. 자바 변수명 (MParserUtils가 "fieldName"으로 넘겨준다고 가정)
                 if ("fieldName".equals(pair.getKey())) {
-                    System.out.println("[EntityMetaRegistry] fieldName=" + pair.getValue());
+
                     fieldName = pair.getValue();
 
                 }
@@ -103,7 +108,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
                 entityMeta.addMapping(fieldName, columnName);
                 if (typeName != null) entityMeta.addTypeMapping(fieldName, typeName);
 
-                System.out.println("[register] field=" + fieldName + ", columnName=" + columnName + ", typeName=" + typeName);
+
 
 
             }
@@ -188,10 +193,8 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
             }
 
         } catch (Exception e) {
-            System.err.println("=== ERROR: " + e.getClass().getName() + ": " + e.getMessage());
-            for (StackTraceElement ste : e.getStackTrace()) {
-                System.err.println("  at " + ste);
-            }
+            log.error(e.getMessage());
+
             throw new NullPointerException(
                     "getEntityMeta not found for entityName=" + entityName +
                             " (normalized=" + normalized + ")"
@@ -286,6 +289,7 @@ public class RepoMetaRegistryImpl implements RepoMetaRegistry {
             return registry;
 
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new RuntimeException(e);
         }
     }

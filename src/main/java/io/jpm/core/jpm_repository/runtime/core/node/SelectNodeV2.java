@@ -1,6 +1,7 @@
 package io.jpm.core.jpm_repository.runtime.core.node;
 
 
+import io.jpm.common.utils.CustomLogger;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.EntityRelationRegistry;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.BuildContext;
@@ -34,6 +35,9 @@ public class SelectNodeV2 implements SqlNode {
     private final String entityName;
     private final EntityMeta entityMeta;
     private final Map<String, String> tableAliases;
+    private static final CustomLogger log = CustomLogger.getLogger(SelectNodeV2.class);
+
+
 
     public SelectNodeV2(List<String> columns, EntityMeta entityMeta, List<ResultMappingMeta> resultMappingMetas, Map<String, String> tableAliases, String entityName) {
         this.columns = columns;
@@ -41,7 +45,7 @@ public class SelectNodeV2 implements SqlNode {
         this.entityMeta = entityMeta;
         this.entityName = entityName;
         this.tableAliases = tableAliases;
-        System.out.println("[SelectNodeV2] tableAliases: " + tableAliases);
+        log.debug("tableAliases: {}", tableAliases);
     }
 
 
@@ -96,7 +100,7 @@ public class SelectNodeV2 implements SqlNode {
 
                     String pkFieldName = entityRelationRegistry.getPkFieldName(aliasEntityName);
 
-                    System.out.println("[SelectNodeV2] pkFieldName: " + aliasEntityName + ", " +pkFieldName);
+                    log.debug("[SelectNodeV2] aliasEntityName: {}, pkFieldName: {}", aliasEntityName, pkFieldName);
 
                     if( pkFieldName == null || !pkFieldName.equals(fieldName)) {continue;}
 
@@ -128,9 +132,8 @@ public class SelectNodeV2 implements SqlNode {
 
         }
 
-        System.out.println("[parseColumnMappings] resultMappingMetas " + resultMappingMetas);
-
-        System.out.println("[parseColumnMappings] resolveColumns: "+ resolveColumns);
+        log.debug("resultMappingMetas {}", resultMappingMetas);
+        log.debug("resolveColumns: {}", resolveColumns);
 
 
     }
@@ -145,9 +148,9 @@ public class SelectNodeV2 implements SqlNode {
 
         resolved = columnResolver.normalizeColumnName(resolved);
 
-        System.out.println("[SelectNode] resolved: " + resolved);
+        log.debug("resolved: {}", resolved);
 
-        parseColumnMappings(resolved);
+      /*  parseColumnMappings(resolved);*/
 
 
         ctx.setAction("SELECT");

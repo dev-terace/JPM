@@ -1,5 +1,9 @@
 package io.jpm.api;
 
+
+import io.jpm.api.terrace_query.TerraceQuery;
+
+
 public class AliasedField<E, R extends MField<?>> implements TerraceQuery.SelectRawResultArg {
 
     public final String tableAlias;   // u1
@@ -13,9 +17,7 @@ public class AliasedField<E, R extends MField<?>> implements TerraceQuery.Select
 
     }
 
-/*    public AliasedField<E, R> as(String selectAlias) {
-        return new AliasedField<>(this.tableAlias, this.fieldRef, selectAlias);
-    }*/
+
     public String describe() {
         return tableAlias + "." + fieldRef.describe();
     }

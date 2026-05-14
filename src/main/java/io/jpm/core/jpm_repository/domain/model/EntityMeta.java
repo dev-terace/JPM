@@ -15,6 +15,7 @@ public class EntityMeta {
     private final RepoMetaRegistry repoMetaRegistry;
 
 
+
     // Key: 자바 변수명(level), Value: DB 컬럼명(user_level)
     private final Map<String, String> fieldToColumn = new HashMap<>();
     private final Map<String, String> fieldToType = new HashMap<>();
@@ -53,15 +54,12 @@ public class EntityMeta {
 
     public String getColumn(String fieldName) {
 
-        System.out.println("fieldToColumn: " + fieldToColumn);
         return fieldToColumn.get(fieldName);
     }
 
 
     public String getFieldType(String fieldName) { // 🚀 추가
 
-        System.out.println("[디버그] fieldToType 전체: " + fieldToType);
-        System.out.println("[디버그] getFieldType 요청: " + fieldName + " -> " + fieldToType.get(fieldName));
         return fieldToType.get(fieldName);
     }
 

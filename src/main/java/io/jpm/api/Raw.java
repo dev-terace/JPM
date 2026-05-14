@@ -1,6 +1,8 @@
 package io.jpm.api;
 
-public class Raw implements IArg, JpmAbstractQuerySegment.SelectRawResultArg {
+import io.jpm.api.terrace_query.TerraceQuery;
+
+public class Raw implements IArg, TerraceQuery.SelectRawResultArg {
     public String val;
     public Object origin;
     public Raw(Object v) {

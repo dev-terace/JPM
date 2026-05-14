@@ -1,23 +1,22 @@
-package io.jpm.api;
+package io.jpm.api.terrace_query;
 
+import io.jpm.common.utils.CustomLogger;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
 import io.jpm.core.jpm_repository.domain.model.DslStatementV2;
 
 
+import io.jpm.core.jpm_repository.runtime.cache.ResultMappingMeta;
 import io.jpm.core.jpm_repository.runtime.config.AppConfig;
 
+import io.jpm.core.jpm_repository.runtime.context.AddResultMapMetaContext;
 import io.jpm.core.jpm_repository.runtime.context.SqlMapBinderContextV2;
 
 import io.jpm.core.jpm_repository.runtime.core.MurmurHash3;
-import io.jpm.core.jpm_repository.runtime.core.ResultMapMetaV2;
 import io.jpm.core.jpm_repository.runtime.core.SqlNodeParserStepsV2;
 
 
-import io.jpm.core.jpm_repository.utils.ColumnResolver;
-import org.apache.ibatis.builder.SqlSourceBuilder;
-import org.apache.ibatis.builder.StaticSqlSource;
+import io.jpm.core.jpm_repository.runtime.core.add_result_map_meta.AddResultMapMetaStep;
 import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.ResultMapping;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.scripting.defaults.RawSqlSource;
@@ -37,13 +36,14 @@ public class TerraceQueryExecutor {
 
     private final SqlSessionFactory sqlSessionFactory;
     private static final RepoMetaRegistry repoMetaRegistry = AppConfig.getRepoMetaRegistry();
-
+    private final CustomLogger log = CustomLogger.getLogger(TerraceQueryExecutor.class);
     public TerraceQueryExecutor(SqlSessionFactory sqlSessionFactory) throws IOException {
         this.sqlSessionFactory = sqlSessionFactory;
 
-
-
     }
+
+    private final AddResultMapMetaStep addResultMapMetaStep = new AddResultMapMetaStep();
+
 
 
 
@@ -67,12 +67,16 @@ public class TerraceQueryExecutor {
 
         String statementId = buildStatementId(terraceQuery, id);
 
+
         SqlNodeParserStepsV2 steps = new SqlNodeParserStepsV2(repoMetaRegistry);
-      /*  ResultMapMetaV2.from(terraceQuery.getStatements());*/
+
 
         SqlMapBinderContextV2 binderContextV2 = new SqlMapBinderContextV2(terraceQuery.getStatements());
-
         steps.execute(binderContextV2);
+
+        addResultMapMetaStep.execute(new AddResultMapMetaContext(binderContextV2.getStatements(), binderContextV2.getBuildContext().getTableAliases(), binderContextV2.getBuildContext()));
+
+
 
 
        /* Configuration configuration = sqlSessionFactory.getConfiguration();
@@ -187,7 +191,7 @@ public class TerraceQueryExecutor {
         List<DslStatementV2> statements = query.getStatements();
 
 
-        System.out.println("statements: " + statements);
+        log.debug("statements: " + statements);
         String hash = MurmurHash3.hash64Hex(  statements.stream()
                         .map(Objects::toString)
                         .collect(Collectors.joining()));

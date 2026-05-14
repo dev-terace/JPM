@@ -24,8 +24,6 @@ public class ArgResolver {
 
     public List<String> resolveAll(List<String> rawArgs, EntityMeta mainMeta, BuildContext ctx) {
 
-        System.out.println("[ArgResolver] resolveAll rawArgs = "+rawArgs +" mainMeta = "+mainMeta+" ctx = "+ctx);
-
 
         return rawArgs.stream()
                 .map(arg -> arg != null ? resolve(arg, mainMeta, ctx) : "")
@@ -62,7 +60,7 @@ public class ArgResolver {
 
         if (arg.contains("::")) {
 
-            System.out.println("[ArgResolver] resolveCore = "+resolveMethodRef(arg, mainMeta, ctx));
+
             return resolveMethodRef(arg, mainMeta, ctx);
         }
 
@@ -85,7 +83,7 @@ public class ArgResolver {
 
 
         if (refObj.contains(".")) {
-            System.out.println("[ArgResolver] resolveMethodRef refObj = "+refObj);
+
             String[] refParts     = refObj.split("\\.");
             explicitTableAlias    = refParts[0];
             classNameForMeta      = refParts[1];
@@ -108,7 +106,6 @@ public class ArgResolver {
                     ? explicitTableAlias
                     : ctx.resolveAlias(tableName);
 
-            System.out.println("[ArgResolver] resolveMethodRef alias = "+explicitTableAlias);
 
             // 메인 테이블이고 별칭 접두어 불필요한 경우 컬럼명만 반환
             if (!ctx.isRequiresPrefix()
@@ -118,7 +115,6 @@ public class ArgResolver {
                 return finalCol;
             }
 
-            System.out.println("[resolveMethodRef] : " + alias + "." + finalCol);
 
             return alias + "." + finalCol;
         }

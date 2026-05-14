@@ -21,7 +21,7 @@ public class ArgResolverV2 {
 
     public List<String> resolveAll(List<String> rawArgs, EntityMeta mainMeta, BuildContext ctx) {
 
-        System.out.println("[ArgResolver] resolveAll rawArgs = "+rawArgs +" mainMeta = "+mainMeta+" ctx = "+ctx);
+
         return rawArgs.stream()
                 .map(arg -> arg != null ? resolve(arg, mainMeta, ctx) : "")
                 .collect(Collectors.toList());

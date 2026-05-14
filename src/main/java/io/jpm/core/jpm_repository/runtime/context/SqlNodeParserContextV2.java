@@ -10,12 +10,13 @@ import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.core
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class SqlNodeParserContextV2 implements Context {
 
     private final List<DslStatementV2> statements;
     private final BuildContext       buildContext;
     private final List<SqlNode>      nodes = new ArrayList<>();
-    private List<ResultMappingMeta> resultMappingMeta = new ArrayList<>();
+    private final List<ResultMappingMeta> resultMappingMeta = new ArrayList<>();
 
 
 

@@ -1,6 +1,6 @@
 package io.jpm.core.jpm_repository.runtime.core;
 
-import io.jpm.api.TerraceQuery;
+import io.jpm.common.utils.CustomLogger;
 import io.jpm.common.utils.LogPrinter;
 import io.jpm.config.ast.Step;
 import io.jpm.core.jpm_repository.domain.cache.interfaces.RepoMetaRegistry;
@@ -24,9 +24,7 @@ import io.jpm.core.jpm_repository.steps.write_dml_handler.build_method_data.util
 import io.jpm.core.jpm_repository.utils.ColumnResolver;
 
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import java.util.stream.Collectors;
 
@@ -39,6 +37,8 @@ public class BuildSqlNodesStepV2 implements Step<SqlNodeParserContextV2> {
     private final ArgResolver argResolver;
     private final ColumnResolver   columnResolver;
     private final SqlNodeParserStepsV2 sqlNodeParserStepsV2;
+    private final CustomLogger log = CustomLogger.getLogger(BuildSqlNodesStepV2.class);
+
 
 
     public BuildSqlNodesStepV2(RepoMetaRegistry repoMetaRegistry, SqlNodeParserStepsV2 sqlNodeParserStepsV2) {
@@ -47,6 +47,7 @@ public class BuildSqlNodesStepV2 implements Step<SqlNodeParserContextV2> {
         this.argResolver      = new ArgResolver(repoMetaRegistry);
         this.columnResolver   = new ColumnResolver(repoMetaRegistry);
         this.sqlNodeParserStepsV2 = sqlNodeParserStepsV2;
+
 
 
     }
@@ -58,6 +59,7 @@ public class BuildSqlNodesStepV2 implements Step<SqlNodeParserContextV2> {
         List<DslStatementV2> statements = ctx.getStatements();
         BuildContext       buildCtx   = ctx.getBuildContext();
         WhereClauseNode    where      = new WhereClauseNode();
+
         HavingClauseNode having = new HavingClauseNode();
 
 
@@ -72,7 +74,7 @@ public class BuildSqlNodesStepV2 implements Step<SqlNodeParserContextV2> {
                         .trim()
                         .split("\\.")[1];
 
-                System.out.println("entityName = " + entityName);
+                log.debug("entityName = {}", entityName);
                 break;
             }
 
@@ -82,21 +84,23 @@ public class BuildSqlNodesStepV2 implements Step<SqlNodeParserContextV2> {
 
         List<ResultMappingMeta> resultMappingMetas = ctx.getResultMappingMeta();
 
+
         for (int i = 0; i < statements.size(); i++) {
             DslStatementV2 stmt = statements.get(i);
             String cmd = stmt.getCommand();
-            System.out.println("[BuildSqlNodesStepV2] cmd : " + cmd);
+            log.debug("cmd : {}", cmd);
 
             List<String> resolveStmt = DslStatementArgResolver.resolve(stmt);
             List<String> args = argResolver.resolveAll(resolveStmt, entityMeta, buildCtx);
             //ResultMappingMeta ADD func 구현
 
-            System.out.println("[BuildSqlNodesStepV2] args : " + args);
+            log.debug("args : {}", args);
 
 
             switch (cmd) {
                 case "select":
                     ctx.addNode(new SelectNodeV2(args, entityMeta, resultMappingMetas, buildCtx.getTableAliases(), entityName));
+                    log.debug("selected entity : {}", entityName);
                     break;
 
                 case "selectRaw":
