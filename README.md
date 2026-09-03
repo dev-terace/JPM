@@ -1,7 +1,7 @@
 # Terrace
 
-JPA의 `auto-ddl` 기능에서 영감을 받아 만든 ** mybatis dsl**입니다. 
-현재는 auto ddl만 지원하며 쿼리 실행은 개발중에 있습니다.
+JPA의 `auto-ddl` 기능에서 영감을 받아 만든 mybatis dsl입니다. 
+현재는 `auto ddl`만 지원하며 쿼리 실행은 개발중에 있습니다.
 
 JPA는 `@Entity`, `@Column` 등의 **어노테이션을 기반으로 엔티티와 컬럼을 정의**하는 반면,  
 Terrace는 `MField`를 중심으로 **빌더 패턴을 사용하여 테이블의 필드와 속성을 정의**할 수 있도록 설계했습니다.
